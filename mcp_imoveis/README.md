@@ -13,6 +13,7 @@ Servidor MCP em Python para:
 
 Busca imoveis aplicando regras de expansao e tolerancia:
 
+- imoveis inativos (`active = false`) nunca sao retornados;
 - busca por `cidade` e `bairro` ignora acentos e case (unaccent + ILIKE);
 - contagens (quartos, suites, banheiros, vagas) usam range de ±2;
 - `area_util` usa range de ±50%;

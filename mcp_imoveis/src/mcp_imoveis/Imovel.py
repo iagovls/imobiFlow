@@ -73,6 +73,11 @@ class Imovel:
         where_clauses: list[sql.Composed | sql.SQL] = []
         params: list[Any] = []
 
+        # Regra de negocio: nunca expor imoveis inativos ao cliente.
+        where_clauses.append(
+            sql.SQL("{} IS DISTINCT FROM FALSE").format(sql.Identifier("active"))
+        )
+
         def append_equal(column: str, value: Any) -> None:
             where_clauses.append(
                 sql.SQL("{} = {}").format(sql.Identifier(column), sql.Placeholder())
