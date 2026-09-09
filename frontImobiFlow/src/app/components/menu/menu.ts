@@ -17,9 +17,9 @@ export class Menu {
   public menuService = inject(MenuService);
   public authService = inject(AuthService);
   public accountIcon = AccountIcon;
-  public fullName = computed(() => {
+  public userName = computed(() => {
     const user = this.authService.user();
-    return user?.user_metadata?.['full_name'] ?? 'Usuário';
+    return user?.user_metadata?.['name'] ?? 'Usuário';
   });
 
   style = 'md:p-2 md:bg-verde-200 md:rounded-md md:border md:shadow md:border-emerald-500';

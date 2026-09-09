@@ -56,13 +56,13 @@ export class PropertyFormComponent implements OnInit, OnChanges {
 
   private buildForm() {
     this.form = this.fb.group({
-      imv_codigo: ['', [Validators.required]],
+      imv_codigo: [{ value: '', disabled: true }],
       titulo: ['', []],
       tipo: ['Apartamento', [Validators.required]],
       finalidade: ['venda' as Finalidade, [Validators.required]],
       fonte_url: ['', []],
 
-      uf: ['SP', [Validators.required]],
+      uf: ['BA', [Validators.required]],
       cidade: ['', [Validators.required]],
       bairro: ['', []],
       regiao_cidade: ['', []],
@@ -103,15 +103,31 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     }
   }
 
+  private carregandoCodigo = false;
+
+  private async carregarProximoCodigo() {
+    if (this.carregandoCodigo) return;
+    this.carregandoCodigo = true;
+    try {
+      const proximo = await this.propertiesService.getNextCodigo();
+      const semPrefixo = proximo.startsWith('IMV-') ? proximo.slice(4) : proximo;
+      this.form.get('imv_codigo')?.setValue(semPrefixo);
+    } finally {
+      this.carregandoCodigo = false;
+    }
+  }
+
   private patchFormFromImovel() {
     if (this.imovel) {
+      const codigo = this.imovel.imv_codigo ?? '';
+      const codigoSemPrefixo = codigo.startsWith('IMV-') ? codigo.slice(4) : codigo;
       this.form.patchValue({
-        imv_codigo: this.imovel.imv_codigo ?? '',
+        imv_codigo: codigoSemPrefixo,
         titulo: this.imovel.titulo ?? '',
         tipo: this.imovel.tipo ?? 'Apartamento',
         finalidade: this.imovel.finalidade ?? 'venda',
         fonte_url: this.imovel.fonte_url ?? '',
-        uf: this.imovel.uf ?? 'SP',
+        uf: this.imovel.uf ?? 'BA',
         cidade: this.imovel.cidade ?? '',
         bairro: this.imovel.bairro ?? '',
         regiao_cidade: this.imovel.regiao_cidade ?? '',
@@ -142,13 +158,14 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       this.form.reset({
         tipo: 'Apartamento',
         finalidade: 'venda',
-        uf: 'SP',
+        uf: 'BA',
         preco: 0,
         preco_mensal: false,
         aceita_pet: true,
         active: true,
       });
       this.activeToggle.set(true);
+      this.carregarProximoCodigo();
     }
   }
 
@@ -181,12 +198,15 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       let result: Imovel | null;
 
       if (this.isNew || !this.imovel) {
+        // Código é atribuído automaticamente pelo PropertiesService.
         const createPayload: ImovelCreate = {
           ...rawValue,
+          imv_codigo: '',
           imagem_principal: this.imovel?.imagem_principal ?? null,
         };
         result = await this.propertiesService.createImovel(createPayload);
       } else {
+        rawValue.imv_codigo = this.imovel.imv_codigo;
         const updatePayload: ImovelUpdate = {
           id: this.imovel.id,
           ...rawValue,
@@ -198,8 +218,10 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       if (result) {
         this.form.markAsPristine();
         this.saved.emit(result);
+      } else if (this.isNew || !this.imovel) {
+        this.errorMessage.set('Não foi possível gerar um código único para o imóvel. Tente novamente.');
       } else {
-        this.errorMessage.set('Erro ao salvar imóvel. Verifique o código e tente novamente.');
+        this.errorMessage.set('Erro ao salvar imóvel. Tente novamente.');
       }
     } catch (err) {
       console.error(err);

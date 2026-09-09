@@ -46,18 +46,20 @@ export class PropertyImagesComponent implements OnInit {
 
   hasUploads = computed(() => this.uploadEntries().length > 0);
 
+  
+
   ngOnInit() {
     if (this.imovel?.imagem_principal) {
       this.imagemPrincipalUrl.set(this.resolveUrl(this.imovel.imagem_principal));
     }
     this.carregarImagens();
   }
-
+  
   async carregarImagens() {
     if (!this.imovel?.imv_codigo) return;
     this.loading.set(true);
     this.errorMessage.set(null);
-
+    
     try {
       const prefix = this.propertiesService.buildImovelKeyPrefix(this.imovel.imv_codigo);
       const lista = await this.s3Service.listImages(prefix);

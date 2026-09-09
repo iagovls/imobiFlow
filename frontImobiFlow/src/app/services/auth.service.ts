@@ -30,24 +30,7 @@ export class AuthService {
     this.initSession();
   }
 
-  private async loadProfile(userId: string): Promise<void> {
-    try {
-      const schema = (environment as unknown as { supabaseSchema: string }).supabaseSchema;
-      const { data, error } = await this.supabase
-        .schema(schema)
-        .from('profiles')
-        .select('id, display_name')
-        .eq('id', userId)
-        .maybeSingle();
-      console.log('loadProfile', data, error);
-      if (error) throw error;
-      this._profile.set(
-        data ? { id: data.id, displayName: data.display_name?.toString() ?? '' } : null,
-      );
-    } catch {
-      this._profile.set(null);
-    }
-  }
+
 
   private async initSession(): Promise<void> {
     const {
@@ -60,11 +43,6 @@ export class AuthService {
     this.supabase.auth.onAuthStateChange(async (_event, session) => {
       this._session.set(session);
       this._user.set(session?.user ?? null);
-      if (session?.user) {
-        await this.loadProfile(session.user.id);
-      }
-      this._loading.set(false);
-
     });
   }
 
@@ -75,9 +53,10 @@ export class AuthService {
       return { error: error.message };
     }
 
-    const profile = this.profile();
+    const appId = this._user()?.app_metadata?.['app_id'];
 
-    if (!profile) {
+    if (appId != 'imobiflow') {
+      console.log(appId);
       await this.logout();
       return { error: 'Usuário sem perfil associado' };
     }

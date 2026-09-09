@@ -19,74 +19,14 @@ npm run test           # testes Vitest
 npm run build          # build de produção (SSR + browser bundles)
 ```
 
-> ⚠️ Para rodar local o `.env` na raiz do repositório precisa ter `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SCHEMA`. O `npm run start` executa o `set-env.js` antes (prestart).
+> ⚠️ Para rodar local o `.env` na raiz do repositório precisa ter `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SCHEMA`, `S3_API_BASE_URL`, `S3_API_REGION`, `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`. O `npm run start` executa o `set-env.js` para criar automaticamento o `src/environments/environment.ts` (prestart).
 
 ---
 
-## 2. Validação de App por `app_metadata.app_id` via Auth Hook PL/pgSQL
 
-Quando múltiplos apps compartilham o **mesmo projeto Supabase**, o controle de acesso não pode ser só client-side. Usamos um **Custom Access Token Hook (PL/pgSQL)** que roda **antes da emissão do JWT** e bloqueia login de usuário sem `app_metadata.app_id === 'imobiflow'`.
 
-### 2.1 Bug inicial que fazia bypass
 
-Na primeira versão do SQL a comparação usava apenas `<>`:
-
-```sql
-IF claims->'app_metadata'->>'app_id' <> 'imobiflow' THEN ...
-```
-
-Quando o usuário não tinha o campo `app_id`, a expressão virava **`NULL <> 'imobiflow'`** → PostgreSQL retorna `NULL`, tratado como **false** no `IF`. Bloco de erro nunca rodava, login era permitido. Além disso, no Custom Access Token Hook o Supabase **não aninha** `app_metadata` dentro de `claims` — o caminho `claims->'app_metadata'` também retornava `NULL`.
-
-### 2.2 Versão final do SQL (funcionando)
-
-Cole no painel **Supabase → Authentication → Hooks → Add Hook → Custom Access Token Hook (PL/pgSQL)**:
-
-```sql
-DECLARE
-    claims jsonb;
-    app_id text;
-BEGIN
-    claims := meta->'claims';
-
-    -- (opcional) Logs para debug — consulte na aba Postgres Logs do painel
-    -- RAISE LOG 'hook claims: %', claims;
-    -- RAISE LOG 'keys: %', ARRAY(SELECT jsonb_object_keys(claims));
-
-    -- Tenta múltiplos caminhos e pega o primeiro que não for NULL:
-    --   1) claim custom na raiz do JWT  → claims->>'app_id'
-    --   2) se app_metadata for aninhado → claims->'app_metadata'->>'app_id'
-    --   3) direto da coluna fonte da tabela auth.users (raw_app_meta_data)
-    app_id := claims->>'app_id';
-    IF app_id IS NULL THEN app_id := claims->'app_metadata'->>'app_id'; END IF;
-    IF app_id IS NULL THEN app_id := (raw_app_meta_data->>'app_id'); END IF;
-
-    -- RAISE LOG 'app_id resolvido: %', app_id;
-
-    -- IS DISTINCT FROM considera NULL como "diferente":
-    --   • usuário sem campo app_id → bloqueia
-    --   • usuário com app_id diferente de imobiflow → bloqueia
-    --   • usuário com app_id = imobiflow → permite
-    IF app_id IS DISTINCT FROM 'imobiflow' THEN
-        RETURN jsonb_build_object(
-            'error', jsonb_build_object(
-                'http_code', 401,
-                'message', 'Unauthorized: invalid app_id'
-            )
-        );
-    END IF;
-
-    -- Opcional: injeta app_id como claim custom no payload do JWT,
-    -- útil para RLS baseado em auth.jwt()->>'app_id'
-    RETURN jsonb_set(
-        meta,
-        '{claims,app_id}',
-        to_jsonb(COALESCE(app_id, '')),
-        true
-    );
-END;
-```
-
-### 2.3 Campos importantes
+### 2.1 Campos importantes
 
 | Item | Valor |
 |---|---|
@@ -96,58 +36,7 @@ END;
 | Comparação segura NULL | `IS DISTINCT FROM` |
 | Fonte de verdade do `app_id` | Coluna `raw_app_meta_data` de `auth.users` |
 
-### 2.4 Como atribuir `app_id` para usuários
 
-`app_metadata` (raw_app_meta_data no Postgres) **só pode ser alterado via service role / SQL direto** (usuário final não consegue editar via `updateUser`).
-
-#### Usuários existentes (rode no SQL Editor do Supabase)
-
-```sql
-UPDATE auth.users
-SET raw_app_meta_data = jsonb_set(
-  COALESCE(raw_app_meta_data, '{}'::jsonb),
-  '{app_id}',
-  '"imobiflow"'
-)
-WHERE email IN ('usuario@exemplo.com');
-```
-
-#### Preenchimento automático no cadastro (trigger BEFORE INSERT)
-
-```sql
-CREATE OR REPLACE FUNCTION pierre.set_default_app_id_on_signup()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.raw_app_meta_data := jsonb_set(
-    COALESCE(NEW.raw_app_meta_data, '{}'::jsonb),
-    '{app_id}',
-    '"imobiflow"'
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER trg_set_app_id_before_insert
-BEFORE INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION pierre.set_default_app_id_on_signup();
-```
-
-### 2.5 Exemplo de Policies RLS com o claim custom injetado
-
-Se descomentar o `jsonb_set` no final do hook, o JWT passa a ter o claim `app_id` e você pode bloquear **em nível de tabela**:
-
-```sql
-ALTER TABLE pierre.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pierre.imoveis   ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY profiles_rw_by_app_id
-  ON pierre.profiles FOR ALL
-  USING (auth.jwt() ->> 'app_id' = 'imobiflow');
-
-CREATE POLICY imoveis_rw_by_app_id
-  ON pierre.imoveis FOR ALL
-  USING (auth.jwt() ->> 'app_id' = 'imobiflow');
-```
 
 ### 2.6 Fluxo completo de autenticação
 
@@ -172,12 +61,19 @@ onAuthStateChange dispara (auth.service.ts)
 AuthService só confere se há profile no schema pierre
 ```
 
-### 2.7 Troubleshooting
+---
 
-- **Login passando mesmo sem app_id**: confirme que o `IF` usa `IS DISTINCT FROM` (e não só `<>`).
-- **Login bloqueando mesmo com app_id correto**: descomente os `RAISE LOG`, tente logar e consulte a aba **Postgres Logs** para ver o `app_id resolvido`.
-- **Estrutura real de `meta.claims`**: descomente os logs de `keys` e `claims` no topo do hook.
-- **Claim `app_id` não aparece no JWT**: confirme que o `jsonb_set` no final do hook não está comentado.
+## 2.7 Código do imóvel (`imv_codigo`)
+
+O `imv_codigo` (`IMV-<n>` com 3+ dígitos) é a chave de negócio do imóvel — usada no
+`updateImovel`/`deleteImovel` e como prefixo das pastas no S3. O usuário **não digita** o
+código: `PropertiesService.getNextCodigo()` calcula `max(n) + 1` sobre os códigos existentes
+e `createImovel()` o atribui no insert, com retry se houver colisão (`23505`). No formulário
+o campo "Código" é somente leitura em qualquer modo.
+
+> ⚠️ O schema `pierre.imoveis` precisa ter índice/constraint **`UNIQUE (imv_codigo)`** — é o
+> que garante unicidade sob concorrência e ativa o retry do `createImovel`. Deduplicar linhas
+> existentes antes de criar a constraint.
 
 ---
 

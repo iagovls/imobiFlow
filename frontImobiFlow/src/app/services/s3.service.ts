@@ -3,6 +3,15 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
+import { AssumeRoleWithWebIdentityCommand, STSClient } from '@aws-sdk/client-sts';
+
+import {
+  S3Client,
+  ListObjectsV2Command,
+  ListObjectsV2CommandInput,
+  ListObjectsV2CommandOutput,
+  ListBucketsCommand,
+} from '@aws-sdk/client-s3';
 
 export interface S3ImageItem {
   key: string;
@@ -29,13 +38,14 @@ interface S3Env {
   supabaseUrl: string;
   supabaseAnonKey: string;
   s3ApiBaseUrl?: string;
+  s3ApiRegion?: string;
+  S3_BUCKET?: string;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class S3Service {
-  private readonly S3_BUCKET = 'fotos-imoveis-pierre';
   private readonly env: S3Env = environment as unknown as S3Env;
   private readonly API_BASE_URL: string;
   private readonly supabase: SupabaseClient;
@@ -46,12 +56,12 @@ export class S3Service {
   }
 
   getS3PublicUrl(key: string): string {
-    return `https://${this.S3_BUCKET}.s3.amazonaws.com/${key}`;
+    return `https://${this.env.S3_BUCKET}.s3.amazonaws.com/${key}`;
   }
 
   async listImages(prefix: string): Promise<S3ImageItem[]> {
     try {
-      const url = `${this.API_BASE_URL}/get-s3-property-images?prefix=${encodeURIComponent(prefix)}&bucket=${encodeURIComponent(this.S3_BUCKET)}`;
+      const url = `${this.API_BASE_URL}/get-s3-property-images?prefix=${encodeURIComponent(prefix)}&bucket=${encodeURIComponent(this.env.S3_BUCKET ?? '')}`;
       const response = await firstValueFrom(
         this.http.get<S3ListResponse>(url, { headers: await this.buildAuthHeaders() }),
       );
@@ -74,7 +84,7 @@ export class S3Service {
         this.http.post<S3PresignedUpload>(
           url,
           {
-            bucket: this.S3_BUCKET,
+            bucket: this.env.S3_BUCKET,
             prefix,
             filename,
             content_type: contentType,
@@ -93,25 +103,40 @@ export class S3Service {
         uploadUrl: '',
         publicUrl: this.getS3PublicUrl(key),
         key,
-        bucket: this.S3_BUCKET,
+        bucket: this.env.S3_BUCKET ?? '',
       };
     }
   }
 
   async uploadFile(presigned: S3PresignedUpload, file: File): Promise<boolean> {
-    if (!presigned.uploadUrl) {
-      console.warn('[S3Service] URL de upload vazia, modo simulado ativo');
+    if (!presigned.key) {
+      console.warn('[S3Service] Key vazia, modo simulado ativo');
       await this.delay(800);
       return true;
     }
     try {
-      await firstValueFrom(
-        this.http.put(presigned.uploadUrl, file, {
-          headers: new HttpHeaders({ 'Content-Type': file.type || 'application/octet-stream' }),
-          reportProgress: false,
-        }),
-      );
-      return true;
+      const proxyUrl = `${this.API_BASE_URL}/proxy-s3-upload`;
+      const authHeaders = await this.buildAuthHeaders();
+
+      const headersObj: Record<string, string> = {};
+      authHeaders.keys().forEach((k) => {
+        const val = authHeaders.get(k);
+        if (val) headersObj[k] = val;
+      });
+      headersObj['x-s3-key'] = presigned.key;
+      headersObj['x-s3-content-type'] = file.type || 'application/octet-stream';
+
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        body: file,
+        headers: headersObj,
+      });
+      if (!response.ok) {
+        const txt = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}: ${response.statusText} — ${txt}`);
+      }
+      const result = (await response.json()) as { success?: boolean };
+      return result.success === true;
     } catch (err) {
       console.error('[S3Service] Erro no upload do arquivo:', err);
       return false;
@@ -124,7 +149,7 @@ export class S3Service {
       await firstValueFrom(
         this.http.post(
           url,
-          { bucket: this.S3_BUCKET, key },
+          { bucket: this.env.S3_BUCKET, key },
           { headers: await this.buildAuthHeaders() },
         ),
       );
@@ -142,7 +167,7 @@ export class S3Service {
       const resp = await firstValueFrom(
         this.http.post<{ success: boolean }>(
           url,
-          { bucket: this.S3_BUCKET, prefix: cleanPrefix },
+          { bucket: this.env.S3_BUCKET ?? '', prefix: cleanPrefix },
           { headers: await this.buildAuthHeaders() },
         ),
       );
@@ -161,7 +186,7 @@ export class S3Service {
       const resp = await firstValueFrom(
         this.http.post<{ deleted: number }>(
           url,
-          { bucket: this.S3_BUCKET, prefix: cleanPrefix },
+          { bucket: this.env.S3_BUCKET ?? '', prefix: cleanPrefix },
           { headers: await this.buildAuthHeaders() },
         ),
       );
@@ -201,4 +226,6 @@ export class S3Service {
     console.warn('[S3Service] Usando mock para listar imagens (prefix:', prefix, ')');
     return [];
   }
+
+ 
 }

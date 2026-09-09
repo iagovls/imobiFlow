@@ -86,6 +86,22 @@ export class PropertiesService {
     return (data as Imovel[]) || [];
   }
 
+  async getNextCodigo(): Promise<string> {
+    const client = this.withSchema();
+    const { data, error } = await client.from('imoveis').select('imv_codigo');
+
+    if (error) {
+      console.error('[PropertiesService] Erro ao calcular próximo código:', error.message);
+    }
+
+    const max = ((data as { imv_codigo: string | null }[]) || []).reduce((acc, row) => {
+      const match = /^IMV-(\d+)$/i.exec((row.imv_codigo ?? '').trim());
+      return match ? Math.max(acc, parseInt(match[1], 10)) : acc;
+    }, 0);
+
+    return `IMV-${String(max + 1).padStart(3, '0')}`;
+  }
+
   async getImovelByCodigo(codigo: string): Promise<Imovel | null> {
     const client = this.withSchema();
     const { data, error } = await client.from('imoveis').select('*').eq('imv_codigo', codigo).maybeSingle();
@@ -100,14 +116,35 @@ export class PropertiesService {
 
   async createImovel(imovel: ImovelCreate): Promise<Imovel | null> {
     const client = this.withSchema();
-    const { data, error } = await client.from('imoveis').insert([imovel]).select().maybeSingle();
+    const MAX_TENTATIVAS = 5;
+    let created: Imovel | null = null;
 
-    if (error) {
+    for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
+      const codigo = imovel.imv_codigo?.trim() || (await this.getNextCodigo());
+      const payload = { ...imovel, imv_codigo: codigo };
+
+      const { data, error } = await client.from('imoveis').insert([payload]).select().maybeSingle();
+
+      if (!error) {
+        created = (data as Imovel) || null;
+        break;
+      }
+
+      // 23505 = unique_violation: código já usado. Só recalcula se o código é automático.
+      if (error.code === '23505' && !imovel.imv_codigo?.trim()) {
+        console.warn(`[PropertiesService] Código ${codigo} em uso, gerando outro...`);
+        continue;
+      }
+
       console.error('[PropertiesService] Erro ao criar imóvel:', error.message);
       return null;
     }
 
-    const created = (data as Imovel) || null;
+    if (!created) {
+      console.error('[PropertiesService] Não foi possível gerar um código único após várias tentativas.');
+      return null;
+    }
+
     if (created?.imv_codigo) {
       const prefix = this.buildImovelKeyPrefix(created.imv_codigo);
       try {
