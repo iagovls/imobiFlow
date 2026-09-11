@@ -29,5 +29,5 @@ export const publicGuard: CanActivateFn = async () => {
     return true;
   }
   
-  return router.createUrlTree(['/leads']);
+  return router.createUrlTree(['/dashboard']);
 };

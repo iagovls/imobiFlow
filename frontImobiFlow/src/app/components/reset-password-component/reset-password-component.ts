@@ -42,6 +42,6 @@ export class ResetPasswordComponent {
       return;
     }
 
-    this.router.navigate(['/leads']);
+    this.router.navigate(['/dashboard']);
   }
 }

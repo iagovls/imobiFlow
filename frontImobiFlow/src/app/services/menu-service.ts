@@ -1,6 +1,7 @@
 import { inject, Injectable, signal, Type } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { UsersIcon } from '../components/icons/users-icon/users-icon';
+import { DashboardIconComponent } from '../components/icons/dashboard-icon-component/dashboard-icon-component';
 import { PropertyIconComponent } from '../components/icons/property-icon-component/property-icon-component';
 import { CalendarIconComponent } from '../components/icons/calendar-icon-component/calendar-icon-component';
 import { HandshakeIconComponent } from '../components/icons/handshake-icon-component/handshake-icon-component';
@@ -42,6 +43,11 @@ export class MenuService {
     icon: Type<unknown>;
     link: string;
   }> = [
+    {
+      name: 'Dashboard',
+      icon: DashboardIconComponent,
+      link: '/dashboard',
+    },
     {
       name: 'Leads',
       icon: UsersIcon,

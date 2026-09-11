@@ -8,18 +8,20 @@ import { RecoveryComponent } from './components/recovery-component/recovery-comp
 import { ResetPasswordComponent } from './components/reset-password-component/reset-password-component';
 import { AccountComponent } from './components/account-component/account-component';
 import { PropertiesComponent } from './components/properties/properties-component/properties-component';
+import { DashboardComponent } from './components/dashboard/dashboard-component/dashboard-component';
 
 export const routes: Routes = [
     {path: 'login', component: LoginComponent, title: 'Login', canActivate: [publicGuard]},
     {path: 'esqueci-senha', component: RecoveryComponent, title: 'Esqueci a senha', canActivate: [publicGuard]},
     {path: 'redefinir-senha', component: ResetPasswordComponent, title: 'Redefinir senha', canActivate: [publicGuard]},
 
+    {path: 'dashboard', component: DashboardComponent, title: 'Dashboard', canActivate: [authGuard]},
     {path: 'leads', component: LeadsComponent, title: 'Leads', canActivate: [authGuard]},
     {path: 'imoveis', component: PropertiesComponent, title: 'Imóveis', canActivate: [authGuard]},
     {path: 'agenda', component: CalendarComponent, title: 'Agenda', canActivate: [authGuard]},
     {path: 'negociacoes', component: NegotiationsComponent, title: 'Negociações', canActivate: [authGuard]},
     {path: 'perfil', component: AccountComponent, title: 'Meu Perfil', canActivate: [authGuard]},
 
-    {path: '', redirectTo: 'leads', pathMatch: 'full'},
-    {path: '**', redirectTo: 'leads', pathMatch: 'full'}
+    {path: '', redirectTo: 'dashboard', pathMatch: 'full'},
+    {path: '**', redirectTo: 'dashboard', pathMatch: 'full'}
 ];

@@ -31,6 +31,6 @@ export class LoginComponent {
       return;
     }
 
-    this.router.navigate(['/leads']);
+    this.router.navigate(['/dashboard']);
   }
 }
