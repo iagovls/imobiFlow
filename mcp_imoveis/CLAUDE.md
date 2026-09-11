@@ -45,7 +45,7 @@ There is **no `.env.example`** in the tree even though `README.md` refers to one
 
 - Target is **Supabase Postgres**, schema **`pierre`**, table **`imoveis`** — hardcoded as class attributes on `Imovel`. This is unrelated to the local Postgres in the root `docker-compose.yml`.
 - Connection: `SUPABASE_POSTGRES_DSN` wins if set; otherwise assembled from `SUPABASE_POSTGRES_HOST/PORT/DATABASE/USER/PASSWORD/SSLMODE` via `make_conninfo`. Missing host/user/password raises at call time, not import time.
-- Queries are built with `psycopg.sql` composables and run through a `ClientCursor` (client-side param interpolation). `cidade`/`bairro` filters use `unaccent(...) ILIKE unaccent(...)` — the DB must have the `unaccent` extension.
+- Queries are built with `psycopg.sql` composables and run through a `ClientCursor` (client-side param interpolation). `cidade`/`bairro` are normalized tables now (`pierre.cidades`/`pierre.bairros`, referenced by `imoveis.cidade_id`/`imoveis.bairro_id`) — `buscarImoveis` `LEFT JOIN`s them and matches with `unaccent(...) ILIKE unaccent(...)` against `c.nome`/`b.nome` (aliases `c`/`b`), not against `imoveis.cidade`/`imoveis.bairro` directly. Those text columns still exist on `imoveis` (kept in sync by the CRM for backward compat) but are no longer read here. The DB must have the `unaccent` extension.
 
 ### Search-expansion rules (in `Imovel.buscarImoveis`)
 

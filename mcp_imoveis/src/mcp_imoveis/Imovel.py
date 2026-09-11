@@ -64,10 +64,22 @@ class Imovel:
         aceita_pet: bool | None = None,
         limite: int = 100,
     ) -> list[dict[str, Any]]:
-        selected_columns = sql.SQL(", ").join(sql.Identifier(coluna) for coluna in self.colunas)
-        query = sql.SQL("SELECT * FROM {}.{}").format(
+        # cidade/bairro/uf viraram tabelas normalizadas (pierre.cidades/bairros/uf) —
+        # imoveis.cidade_id/bairro_id sao a fonte de verdade; imoveis.cidade/bairro
+        # (texto) ainda existem por compatibilidade mas nao sao mais usados aqui.
+        selected_columns = sql.SQL(", ").join(
+            sql.SQL("i.{}").format(sql.Identifier(coluna)) for coluna in self.colunas
+        )
+        query = sql.SQL(
+            "SELECT {} FROM {}.{} i "
+            "LEFT JOIN {}.cidades c ON c.id = i.cidade_id "
+            "LEFT JOIN {}.bairros b ON b.id = i.bairro_id"
+        ).format(
+            selected_columns,
             sql.Identifier(self.schema),
             sql.Identifier(self.tabela),
+            sql.Identifier(self.schema),
+            sql.Identifier(self.schema),
         )
 
         where_clauses: list[sql.Composed | sql.SQL] = []
@@ -75,18 +87,21 @@ class Imovel:
 
         # Regra de negocio: nunca expor imoveis inativos ao cliente.
         where_clauses.append(
-            sql.SQL("{} IS DISTINCT FROM FALSE").format(sql.Identifier("active"))
+            sql.SQL("i.{} IS DISTINCT FROM FALSE").format(sql.Identifier("active"))
         )
 
-        def append_equal(column: str, value: Any) -> None:
+        def append_equal(column: str, value: Any, alias: str = "i") -> None:
             where_clauses.append(
-                sql.SQL("{} = {}").format(sql.Identifier(column), sql.Placeholder())
+                sql.SQL("{}.{} = {}").format(
+                    sql.Identifier(alias), sql.Identifier(column), sql.Placeholder()
+                )
             )
             params.append(value)
 
-        def append_between(column: str, min_value: Any, max_value: Any) -> None:
+        def append_between(column: str, min_value: Any, max_value: Any, alias: str = "i") -> None:
             where_clauses.append(
-                sql.SQL("{} BETWEEN {} AND {}").format(
+                sql.SQL("{}.{} BETWEEN {} AND {}").format(
+                    sql.Identifier(alias),
                     sql.Identifier(column),
                     sql.Placeholder(),
                     sql.Placeholder(),
@@ -94,9 +109,10 @@ class Imovel:
             )
             params.extend([min_value, max_value])
 
-        def append_ilike_unaccent(column: str, value: str) -> None:
+        def append_ilike_unaccent(column: str, value: str, alias: str = "i") -> None:
             where_clauses.append(
-                sql.SQL("unaccent({}) ILIKE unaccent({})").format(
+                sql.SQL("unaccent({}.{}) ILIKE unaccent({})").format(
+                    sql.Identifier(alias),
                     sql.Identifier(column),
                     sql.Placeholder(),
                 )
@@ -111,9 +127,9 @@ class Imovel:
         if tipo is not None:
             append_equal("tipo", tipo)
         if cidade:
-            append_ilike_unaccent("cidade", cidade)
+            append_ilike_unaccent("nome", cidade, alias="c")
         if bairro:
-            append_ilike_unaccent("bairro", bairro)
+            append_ilike_unaccent("nome", bairro, alias="b")
         if finalidade is not None:
             append_equal("finalidade", finalidade)
 
@@ -129,12 +145,12 @@ class Imovel:
                 append_between("preco", effective_preco_min, effective_preco_max)
         elif effective_preco_min is not None:
             where_clauses.append(
-                sql.SQL("{} >= {}").format(sql.Identifier("preco"), sql.Placeholder())
+                sql.SQL("i.{} >= {}").format(sql.Identifier("preco"), sql.Placeholder())
             )
             params.append(effective_preco_min)
         elif effective_preco_max is not None:
             where_clauses.append(
-                sql.SQL("{} <= {}").format(sql.Identifier("preco"), sql.Placeholder())
+                sql.SQL("i.{} <= {}").format(sql.Identifier("preco"), sql.Placeholder())
             )
             params.append(effective_preco_max)
 
