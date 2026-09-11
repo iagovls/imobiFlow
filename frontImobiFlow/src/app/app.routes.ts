@@ -9,6 +9,7 @@ import { ResetPasswordComponent } from './components/reset-password-component/re
 import { AccountComponent } from './components/account-component/account-component';
 import { PropertiesComponent } from './components/properties/properties-component/properties-component';
 import { DashboardComponent } from './components/dashboard/dashboard-component/dashboard-component';
+import { MetasComponent } from './components/metas/metas-component/metas-component';
 
 export const routes: Routes = [
     {path: 'login', component: LoginComponent, title: 'Login', canActivate: [publicGuard]},
@@ -20,6 +21,7 @@ export const routes: Routes = [
     {path: 'imoveis', component: PropertiesComponent, title: 'Imóveis', canActivate: [authGuard]},
     {path: 'agenda', component: CalendarComponent, title: 'Agenda', canActivate: [authGuard]},
     {path: 'negociacoes', component: NegotiationsComponent, title: 'Negociações', canActivate: [authGuard]},
+    {path: 'metas', component: MetasComponent, title: 'Metas', canActivate: [authGuard]},
     {path: 'perfil', component: AccountComponent, title: 'Meu Perfil', canActivate: [authGuard]},
 
     {path: '', redirectTo: 'dashboard', pathMatch: 'full'},

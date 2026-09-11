@@ -22,9 +22,9 @@
         <h1 class="text-emerald-600 text-sm tracking-widest font-bold">{{ corretor | uppercase }}</h1>
         <h1 class="text-olive-600 text-xs tracking-widest font-bold">{{ userName() }}</h1>
         <div>
-            <h2 class="text-olive-600 text-xs">28 imóveis ativos</h2>
-            <h2 class="text-olive-600 text-xs">12 visitas nesta semana</h2>
+            <h2 class="text-olive-600 text-xs">{{ imoveisAtivos() }} imóveis ativos</h2>
+            <h2 class="text-olive-600 text-xs">{{ visitasSemana() }} visitas nos próximos 7 dias</h2>
         </div>
     </div>
-    <!-- <app-goal class="hidden md:block"/> -->
+    <app-goal class="hidden md:block"/>
 </div>
