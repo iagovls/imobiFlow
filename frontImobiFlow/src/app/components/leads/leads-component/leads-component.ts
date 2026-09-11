@@ -1,4 +1,4 @@
-import { Component, HostListener, OnDestroy, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, ViewChild, signal } from '@angular/core';
 import { LeadsListComponent } from "../leads-list-component/leads-list-component";
 import { LeadConversation } from "../lead-conversation/lead-conversation";
 import { Lead } from "../../../services/leads.service";
@@ -36,7 +36,7 @@ import { LucideX } from '@lucide/angular';
             </button>
 
             <div class="w-full h-full">
-              <app-lead-conversation [lead]="selectedLead()" />
+              <app-lead-conversation [lead]="selectedLead()" (leadUpdated)="onLeadUpdated($event)" />
             </div>
           </div>
         </div>
@@ -45,9 +45,16 @@ import { LucideX } from '@lucide/angular';
   `,
 })
 export class LeadsComponent implements OnDestroy {
+  @ViewChild(LeadsListComponent) leadsList?: LeadsListComponent;
+
   selectedLead = signal<Lead | null>(null);
   isModalOpen = signal(false);
   private previousOverflow = '';
+
+  onLeadUpdated(lead: Lead) {
+    this.selectedLead.set(lead);
+    this.leadsList?.loadLeads();
+  }
 
   @HostListener('document:keydown.escape', ['$event'])
   onEscapeKey(event: Event) {

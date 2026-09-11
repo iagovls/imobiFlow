@@ -1,7 +1,9 @@
-import { Component, OnInit, Output, EventEmitter, signal } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, signal, computed } from '@angular/core';
 import { WhatsappIconComponent } from '../../icons/whatsapp-icon-component/whatsapp-icon-component';
-import { LeadsService, Lead } from '../../../services/leads.service';
+import { LeadsService, Lead, LeadStatus, LEAD_STATUSES } from '../../../services/leads.service';
 import { DatePipe } from '@angular/common';
+
+type StatusFiltro = LeadStatus | 'todos';
 
 @Component({
   selector: 'app-leads-list-component',
@@ -10,6 +12,27 @@ import { DatePipe } from '@angular/common';
     <div
       class="flex flex-col w-full h-full rounded-xl border border-gray-200 bg-white"
     >
+      <div class="flex items-center gap-2 px-5 py-2 border-b border-gray-100 overflow-x-auto">
+        <button
+          type="button"
+          class="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
+          [class]="statusFiltro() === 'todos' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          (click)="statusFiltro.set('todos')"
+        >
+          Todos
+        </button>
+        @for (s of statuses; track s.value) {
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
+            [class]="statusFiltro() === s.value ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            (click)="statusFiltro.set(s.value)"
+          >
+            {{ s.label }}
+          </button>
+        }
+      </div>
+
       <div
         class="min-h-0 overflow-auto
                   [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]
@@ -28,6 +51,16 @@ import { DatePipe } from '@angular/common';
                 Lead
               </th>
               <th
+                class="px-1 py-1 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-50 border-b border-gray-200 w-[130px]"
+              >
+                Status
+              </th>
+              <th
+                class="px-1 py-1 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-50 border-b border-gray-200 w-[140px]"
+              >
+                Corretor
+              </th>
+              <th
                 class="px-1 py-1 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 bg-gray-50 border-b border-gray-200 w-[100px]"
               >
                 Ticket
@@ -40,14 +73,14 @@ import { DatePipe } from '@angular/common';
             </tr>
           </thead>
           <tbody>
-            @if (leads().length === 0 && !loading()) {
+            @if (leadsFiltrados().length === 0 && !loading()) {
               <tr>
-                <td colspan="3" class="text-center text-gray-500 py-8 border-b border-gray-100">
+                <td colspan="5" class="text-center text-gray-500 py-8 border-b border-gray-100">
                   Nenhum lead encontrado
                 </td>
               </tr>
             }
-            @for (lead of leads(); track lead.id) {
+            @for (lead of leadsFiltrados(); track lead.id) {
               <tr
                 class="cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-50"
                 [class]="selectedLeadId() === lead.id ? 'bg-blue-50' : ''"
@@ -69,6 +102,16 @@ import { DatePipe } from '@angular/common';
                       </a>
                     </div>
                   </div>
+                </td>
+                <td class="px-1 py-1 border-b border-gray-100 text-sm text-center">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.7rem] font-semibold"
+                    [class]="statusClass(lead.status)"
+                    >{{ statusLabel(lead.status) }}</span
+                  >
+                </td>
+                <td class="px-1 py-1 border-b border-gray-100 text-xs text-gray-600 text-center truncate">
+                  {{ lead.corretor?.display_name || '—' }}
                 </td>
                 <td class="px-1 py-3. border-b border-gray-100 text-sm w-25 text-center">
                   @if (lead.ticket) {
@@ -102,10 +145,19 @@ export class LeadsListComponent implements OnInit {
   leads = signal<Lead[]>([]);
   loading = signal(true);
   selectedLeadId = signal<number | null>(null);
+  statusFiltro = signal<StatusFiltro>('todos');
+
+  statuses = LEAD_STATUSES;
 
   @Output() leadSelected = new EventEmitter<Lead | null>();
 
   constructor(public leadsService: LeadsService) {}
+
+  leadsFiltrados = computed(() => {
+    const filtro = this.statusFiltro();
+    if (filtro === 'todos') return this.leads();
+    return this.leads().filter((l) => l.status === filtro);
+  });
 
   formatCurrency(value: number | null): string {
     if (value == null) return '';
@@ -125,6 +177,19 @@ export class LeadsListComponent implements OnInit {
       return `(${str.slice(0, 2)}) ${str.slice(2, 6)}-${str.slice(6)}`;
     }
     return str;
+  }
+
+  statusLabel(status: LeadStatus): string {
+    return LEAD_STATUSES.find((s) => s.value === status)?.label ?? status;
+  }
+
+  statusClass(status: LeadStatus): string {
+    return {
+      novo: 'bg-indigo-50 text-indigo-800',
+      em_atendimento: 'bg-amber-50 text-amber-800',
+      qualificado: 'bg-green-50 text-green-800',
+      perdido: 'bg-red-50 text-red-800',
+    }[status];
   }
 
   async ngOnInit() {

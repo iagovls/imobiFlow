@@ -1,5 +1,13 @@
-import { Component, Input, OnChanges, SimpleChanges, OnInit, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { Lead, ConversationMessage, LeadsService } from "../../../services/leads.service";
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import {
+  Lead,
+  ConversationMessage,
+  LeadsService,
+  LeadStatus,
+  LEAD_STATUSES,
+  Corretor,
+} from "../../../services/leads.service";
 import { DatePipe, NgClass } from '@angular/common';
 import {
   LucideMessageSquareText,
@@ -7,6 +15,7 @@ import {
   LucideBot,
   LucideLoader2,
   LucideInbox,
+  LucideSend,
 } from '@lucide/angular';
 
 @Component({
@@ -14,26 +23,35 @@ import {
   imports: [
     DatePipe,
     NgClass,
+    FormsModule,
     LucideMessageSquareText,
     LucideUser,
     LucideBot,
     LucideLoader2,
     LucideInbox,
+    LucideSend,
   ],
   templateUrl: './lead-conversation.html',
 })
 export class LeadConversation implements OnChanges, OnInit, AfterViewChecked {
   @Input() lead: Lead | null = null;
+  @Output() leadUpdated = new EventEmitter<Lead>();
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   messages = signal<ConversationMessage[]>([]);
   loading = signal(false);
+  corretores = signal<Corretor[]>([]);
+  sending = signal(false);
+  novaMensagem = '';
+
+  statuses = LEAD_STATUSES;
 
   private shouldScrollToBottom = false;
 
   constructor(private leadsService: LeadsService) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    this.corretores.set(await this.leadsService.getCorretores());
     if (this.lead) {
       this.loadConversation();
     }
@@ -100,5 +118,44 @@ export class LeadConversation implements OnChanges, OnInit, AfterViewChecked {
       return `(${str.slice(0, 2)}) ${str.slice(2, 6)}-${str.slice(6)}`;
     }
     return str;
+  }
+
+  isCorretorMessage(role: string): boolean {
+    return role.toLowerCase().includes('corretor');
+  }
+
+  async onStatusChange(status: LeadStatus) {
+    if (!this.lead) return;
+    const updated = await this.leadsService.updateLead(this.lead.id, { status });
+    if (updated) {
+      this.lead = updated;
+      this.leadUpdated.emit(updated);
+    }
+  }
+
+  async onCorretorChange(corretorId: string) {
+    if (!this.lead) return;
+    const updated = await this.leadsService.updateLead(this.lead.id, {
+      corretor_id: corretorId || null,
+    });
+    if (updated) {
+      this.lead = updated;
+      this.leadUpdated.emit(updated);
+    }
+  }
+
+  async enviarMensagem() {
+    const texto = this.novaMensagem.trim();
+    if (!texto || !this.lead || this.sending()) return;
+
+    this.sending.set(true);
+    const enviado = await this.leadsService.sendMessage(this.lead.tel, texto);
+    this.sending.set(false);
+
+    if (enviado) {
+      this.novaMensagem = '';
+      this.messages.update((list) => [...list, enviado]);
+      this.shouldScrollToBottom = true;
+    }
   }
 }

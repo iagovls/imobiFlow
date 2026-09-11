@@ -6,7 +6,7 @@
       <p class="text-sm max-w-[400px] m-0 leading-6">Clique em um lead na lista ao lado para visualizar o histórico da conversa com a IA</p>
     </div>
   } @else {
-    <div class="flex items-center justify-between px-5 py-2 border-b border-gray-100 bg-gray-50 gap-4">
+    <div class="flex items-center justify-between px-5 py-2 border-b border-gray-100 bg-gray-50 gap-4 flex-wrap">
       <div class="flex items-center gap-3">
         <div class="flex items-center justify-center w-7 h-7 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 text-white">
           <svg lucideUser [size]="15"></svg>
@@ -16,6 +16,27 @@
         </div>
       </div>
 
+      <div class="flex items-center gap-2">
+        <select
+          class="text-xs rounded-lg border border-gray-300 px-2 py-1 bg-white"
+          [ngModel]="lead.status"
+          (ngModelChange)="onStatusChange($event)"
+        >
+          @for (s of statuses; track s.value) {
+            <option [value]="s.value">{{ s.label }}</option>
+          }
+        </select>
+        <select
+          class="text-xs rounded-lg border border-gray-300 px-2 py-1 bg-white max-w-[160px]"
+          [ngModel]="lead.corretor_id ?? ''"
+          (ngModelChange)="onCorretorChange($event)"
+        >
+          <option value="">Sem corretor</option>
+          @for (c of corretores(); track c.id) {
+            <option [value]="c.id">{{ c.display_name || 'Sem nome' }}</option>
+          }
+        </select>
+      </div>
     </div>
 
     <div #messagesContainer class="flex-1 max-h-auto overflow-y-auto overflow-x-hidden px-5 py-5 bg-gradient-to-b from-gray-50 to-gray-200 flex flex-col gap-4
@@ -40,24 +61,28 @@
         @for (msg of messages(); track msg.id) {
           <div class="flex w-full"
                [ngClass]="{
-                 'justify-end': isUserMessage(msg.role),
-                 'justify-start': isAssistantMessage(msg.role) || (!isUserMessage(msg.role) && !isAssistantMessage(msg.role))
+                 'justify-end': isUserMessage(msg.role) || isCorretorMessage(msg.role),
+                 'justify-start': isAssistantMessage(msg.role) || (!isUserMessage(msg.role) && !isAssistantMessage(msg.role) && !isCorretorMessage(msg.role))
                }">
             <div class="max-w-[75%] px-4 py-3.5 rounded-2xl flex flex-col gap-2 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
                  [ngClass]="{
                    'bg-linear-to-br from-emerald-400 to-emerald-600 text-white rounded-br-sm': isUserMessage(msg.role),
+                   'bg-linear-to-br from-indigo-500 to-indigo-600 text-white rounded-br-sm': isCorretorMessage(msg.role),
                    'bg-white border border-gray-200 rounded-bl-sm': isAssistantMessage(msg.role),
-                   'bg-gray-100 border border-gray-300 text-gray-700': !isUserMessage(msg.role) && !isAssistantMessage(msg.role)
+                   'bg-gray-100 border border-gray-300 text-gray-700': !isUserMessage(msg.role) && !isAssistantMessage(msg.role) && !isCorretorMessage(msg.role)
                  }">
               <div class="flex items-center gap-1.5 text-[0.75rem] font-semibold  tracking-wider"
                    [ngClass]="{
-                     'text-white/85 justify-end': isUserMessage(msg.role),
+                     'text-white/85 justify-end': isUserMessage(msg.role) || isCorretorMessage(msg.role),
                      'text-violet-600': isAssistantMessage(msg.role),
-                     'text-gray-500': !isUserMessage(msg.role) && !isAssistantMessage(msg.role)
+                     'text-gray-500': !isUserMessage(msg.role) && !isAssistantMessage(msg.role) && !isCorretorMessage(msg.role)
                    }">
                 @if (isUserMessage(msg.role)) {
                   <svg lucideUser [size]="14"></svg>
                   <span>{{ lead.nome }}</span>
+                } @else if (isCorretorMessage(msg.role)) {
+                  <svg lucideUser [size]="14"></svg>
+                  <span>Você</span>
                 } @else if (isAssistantMessage(msg.role)) {
                   <svg lucideBot [size]="14"></svg>
                   <span>IA</span>
@@ -67,7 +92,7 @@
               </div>
               <p class="m-0 text-sm leading-6 whitespace-pre-wrap break-words"
                  [ngClass]="{
-                   'text-white text-end': isUserMessage(msg.role),
+                   'text-white text-end': isUserMessage(msg.role) || isCorretorMessage(msg.role),
                    'text-gray-800': isAssistantMessage(msg.role)
                  }">{{ msg.message || '(mensagem vazia)' }}</p>
               <span class="text-[0.6875rem] opacity-70 self-end">
@@ -77,6 +102,29 @@
           </div>
         }
       }
+    </div>
+
+    <div class="flex items-end gap-2 px-4 py-3 border-t border-gray-100 bg-white">
+      <textarea
+        class="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm min-h-10 max-h-24"
+        rows="1"
+        placeholder="Escreva uma mensagem..."
+        [(ngModel)]="novaMensagem"
+        (keydown.enter)="$event.preventDefault(); enviarMensagem()"
+      ></textarea>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 shrink-0"
+        [disabled]="sending() || !novaMensagem.trim()"
+        (click)="enviarMensagem()"
+        aria-label="Enviar mensagem"
+      >
+        @if (sending()) {
+          <svg lucideLoader2 class="animate-spin" [size]="18"></svg>
+        } @else {
+          <svg lucideSend [size]="18"></svg>
+        }
+      </button>
     </div>
   }
 </div>
