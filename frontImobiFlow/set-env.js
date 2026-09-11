@@ -14,6 +14,7 @@ const content = (prod) => `export const environment = {
   supabaseSchema: '${process.env.SUPABASE_SCHEMA ?? 'public'}',
   s3ApiBaseUrl: '${process.env.S3_API_BASE_URL ?? ''}',
   s3ApiRegion: '${process.env.S3_API_REGION ?? 'us-east-1'}',
+  S3_BUCKET: '${process.env.S3_BUCKET ?? ''}',
   AWS_ACCESS_KEY_ID: '${process.env.AWS_ACCESS_KEY_ID ?? ''}',
   AWS_SECRET_ACCESS_KEY: '${process.env.AWS_SECRET_ACCESS_KEY ?? ''}',
   googleCalendarClientId: '${process.env.GOOGLE_CALENDAR_CLIENT_ID ?? ''}',

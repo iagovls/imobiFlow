@@ -25,7 +25,7 @@ Angular's `environment.ts` / `environment.prod.ts` are **generated, git-ignored 
 
 - It reads the repo-root `.env` (via `dotenv`) and writes both env files.
 - Required keys: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SCHEMA`. Also consumed: `S3_API_BASE_URL`, `S3_API_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`.
-- If you add a new environment field, add it to the `content()` template in `set-env.js`, to `src/environments/environment.example.ts`, and to the `S3Env` / access shapes in the services. Note: `set-env.js` currently does **not** emit `S3_BUCKET` even though `s3.service.ts` reads `environment.S3_BUCKET` — running `set-env.js` will drop any hand-added value. Reconcile this when touching either file.
+- If you add a new environment field, add it to the `content()` template in `set-env.js`, to `src/environments/environment.example.ts`, and to the `S3Env` / access shapes in the services.
 
 ## Architecture
 
