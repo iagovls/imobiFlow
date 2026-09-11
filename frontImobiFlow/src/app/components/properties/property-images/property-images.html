@@ -159,7 +159,7 @@
             @for (img of imagens(); track img.key) {
               <figure
                 cdkDrag
-                class="group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200"
+                class="group relative aspect-square rounded-xl overflow-hidden border-2 transition-[border-color,box-shadow] duration-200"
                 [ngClass]="isPrincipal(img)
                   ? 'border-amber-400 ring-2 ring-amber-200 shadow-lg shadow-amber-100'
                   : 'border-gray-200 hover:border-gray-400 hover:shadow-md'"
