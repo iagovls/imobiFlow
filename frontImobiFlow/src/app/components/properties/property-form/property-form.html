@@ -174,45 +174,112 @@
           <div class="sm:col-span-1">
             <label class="block text-xs font-medium text-gray-700 mb-1.5">UF <span class="text-red-500">*</span></label>
             <select
-              formControlName="uf"
+              [value]="form.get('uf_id')?.value ?? ''"
+              (change)="onUfChange($any($event.target).value)"
               class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-white"
-              [ngClass]="fieldClass('uf')"
+              [ngClass]="fieldClass('uf_id')"
             >
-              @for (uf of ufLista; track uf) {
-                <option [value]="uf">{{ uf }}</option>
+              <option value="">Selecione...</option>
+              @for (uf of ufs(); track uf.id) {
+                <option [value]="uf.id">{{ uf.sigla }}</option>
               }
             </select>
           </div>
+
           <div class="sm:col-span-2">
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Cidade <span class="text-red-500">*</span></label>
-            <input
-              type="text"
-              formControlName="cidade"
-              placeholder="São Paulo"
-              class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-              [ngClass]="fieldClass('cidade')"
-            />
+            @if (!criandoCidade()) {
+              <select
+                [value]="form.get('cidade_id')?.value ?? ''"
+                (change)="onCidadeChange($any($event.target).value)"
+                [disabled]="!form.get('uf_id')?.value"
+                class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-white disabled:bg-gray-100"
+                [ngClass]="fieldClass('cidade_id')"
+              >
+                <option value="">Selecione...</option>
+                @for (cidade of cidades(); track cidade.id) {
+                  <option [value]="cidade.id">{{ cidade.nome }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                [disabled]="!form.get('uf_id')?.value"
+                (click)="criandoCidade.set(true)"
+              >
+                + Nova cidade
+              </button>
+            } @else {
+              <div class="flex gap-1">
+                <input #novaCidade type="text" placeholder="Nome da cidade" class="w-full px-3 py-2 text-sm border rounded-lg" />
+                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarCidade(novaCidade.value)">OK</button>
+                <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoCidade.set(false)">✕</button>
+              </div>
+            }
           </div>
+
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Região</label>
-            <input
-              type="text"
-              formControlName="regiao_cidade"
-              placeholder="Zona Sul"
-              class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-              [ngClass]="fieldClass('regiao_cidade')"
-            />
+            @if (!criandoRegiao()) {
+              <select
+                [value]="form.get('regiao_id')?.value ?? ''"
+                (change)="onRegiaoChange($any($event.target).value)"
+                [disabled]="!form.get('cidade_id')?.value"
+                class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-white disabled:bg-gray-100"
+              >
+                <option value="">Selecione...</option>
+                @for (regiao of regioes(); track regiao.id) {
+                  <option [value]="regiao.id">{{ regiao.nome }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                [disabled]="!form.get('cidade_id')?.value"
+                (click)="criandoRegiao.set(true)"
+              >
+                + Nova região
+              </button>
+            } @else {
+              <div class="flex gap-1">
+                <input #novaRegiao type="text" placeholder="Nome da região" class="w-full px-3 py-2 text-sm border rounded-lg" />
+                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarRegiao(novaRegiao.value)">OK</button>
+                <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoRegiao.set(false)">✕</button>
+              </div>
+            }
           </div>
+
           <div class="sm:col-span-2">
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Bairro</label>
-            <input
-              type="text"
-              formControlName="bairro"
-              placeholder="Vila Olímpia"
-              class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-              [ngClass]="fieldClass('bairro')"
-            />
+            @if (!criandoBairro()) {
+              <select
+                [value]="form.get('bairro_id')?.value ?? ''"
+                (change)="onBairroChange($any($event.target).value)"
+                [disabled]="!form.get('cidade_id')?.value"
+                class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors bg-white disabled:bg-gray-100"
+              >
+                <option value="">Selecione...</option>
+                @for (bairro of bairros(); track bairro.id) {
+                  <option [value]="bairro.id">{{ bairro.nome }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                [disabled]="!form.get('cidade_id')?.value"
+                (click)="criandoBairro.set(true)"
+              >
+                + Novo bairro
+              </button>
+            } @else {
+              <div class="flex gap-1">
+                <input #novoBairro type="text" placeholder="Nome do bairro" class="w-full px-3 py-2 text-sm border rounded-lg" />
+                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarBairro(novoBairro.value)">OK</button>
+                <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoBairro.set(false)">✕</button>
+              </div>
+            }
           </div>
+
           <div class="sm:col-span-2">
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Endereço</label>
             <input
@@ -426,13 +493,37 @@
               <svg lucideBuilding2 [size]="12" class="text-gray-400"></svg>
               Comodidades
             </label>
-            <textarea
-              formControlName="comodidades"
-              rows="3"
-              placeholder="Piscina, academia, salão de festas, segurança 24h..."
-              class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none"
-              [ngClass]="fieldClass('comodidades')"
-            ></textarea>
+            <div class="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg max-h-32 overflow-y-auto">
+              @for (c of comodidadesDisponiveis(); track c.id) {
+                <label
+                  class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs cursor-pointer border"
+                  [ngClass]="
+                    comodidadesSelecionadas().has(c.id)
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                      : 'bg-white border-gray-200 text-gray-600'
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    class="sr-only"
+                    [checked]="comodidadesSelecionadas().has(c.id)"
+                    (change)="toggleComodidade(c.id)"
+                  />
+                  {{ c.nome }}
+                </label>
+              }
+            </div>
+            @if (!criandoComodidade()) {
+              <button type="button" class="mt-1 text-xs text-indigo-600 hover:underline" (click)="criandoComodidade.set(true)">
+                + Nova comodidade
+              </button>
+            } @else {
+              <div class="mt-1 flex gap-1">
+                <input #novaComodidade type="text" placeholder="Nome da comodidade" class="w-full px-3 py-2 text-sm border rounded-lg" />
+                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarComodidade(novaComodidade.value)">OK</button>
+                <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoComodidade.set(false)">✕</button>
+              </div>
+            }
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5 flex items-center gap-1">

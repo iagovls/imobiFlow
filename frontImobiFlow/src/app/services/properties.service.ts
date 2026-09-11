@@ -40,6 +40,10 @@ export interface Imovel {
   condicoes: string | null;
   restricoes: string | null;
   active: boolean | null;
+  uf_id: number | null;
+  cidade_id: number | null;
+  bairro_id: number | null;
+  regiao_id: number | null;
 }
 
 export type ImovelCreate = Omit<Imovel, 'id' | 'created_at' | 'atualizado_em'>;
@@ -199,6 +203,48 @@ export class PropertiesService {
 
   async setImagemPrincipal(codigo: string, imagem_url: string | null): Promise<Imovel | null> {
     return this.updateImovel({ imv_codigo: codigo, imagem_principal: imagem_url });
+  }
+
+  async setImovelComodidades(imovelId: number, comodidadeIds: number[]): Promise<boolean> {
+    const client = this.withSchema();
+
+    const { error: deleteError } = await client
+      .from('imovel_comodidades')
+      .delete()
+      .eq('imovel_id', imovelId);
+
+    if (deleteError) {
+      console.error('[PropertiesService] Erro ao limpar comodidades do imóvel:', deleteError.message);
+      return false;
+    }
+
+    if (comodidadeIds.length === 0) return true;
+
+    const { error: insertError } = await client
+      .from('imovel_comodidades')
+      .insert(comodidadeIds.map((comodidade_id) => ({ imovel_id: imovelId, comodidade_id })));
+
+    if (insertError) {
+      console.error('[PropertiesService] Erro ao salvar comodidades do imóvel:', insertError.message);
+      return false;
+    }
+
+    return true;
+  }
+
+  async getImovelComodidadeIds(imovelId: number): Promise<number[]> {
+    const client = this.withSchema();
+    const { data, error } = await client
+      .from('imovel_comodidades')
+      .select('comodidade_id')
+      .eq('imovel_id', imovelId);
+
+    if (error) {
+      console.error('[PropertiesService] Erro ao buscar comodidades do imóvel:', error.message);
+      return [];
+    }
+
+    return (data as { comodidade_id: number }[]).map((row) => row.comodidade_id);
   }
 
   formatCurrency(value: number | null): string {

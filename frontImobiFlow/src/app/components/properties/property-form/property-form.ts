@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, Output, EventEmitter, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Imovel, ImovelCreate, ImovelUpdate, PropertiesService, Finalidade } from '../../../services/properties.service';
+import { LocationsService, UF, Cidade, Bairro, Regiao, Comodidade } from '../../../services/locations.service';
 import { NgClass } from '@angular/common';
 import {
   LucideArrowLeft,
@@ -45,13 +46,33 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     'Comercial', 'Sala Comercial', 'Galpão', 'Depósito', 'Outros'
   ];
 
-  ufLista = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+  ufs = signal<UF[]>([]);
+  cidades = signal<Cidade[]>([]);
+  bairros = signal<Bairro[]>([]);
+  regioes = signal<Regiao[]>([]);
+  comodidadesDisponiveis = signal<Comodidade[]>([]);
+  comodidadesSelecionadas = signal<Set<number>>(new Set());
+
+  criandoCidade = signal(false);
+  criandoBairro = signal(false);
+  criandoRegiao = signal(false);
+  criandoComodidade = signal(false);
 
   constructor(
     private fb: FormBuilder,
     private propertiesService: PropertiesService,
+    private locationsService: LocationsService,
   ) {
     this.buildForm();
+  }
+
+  private async carregarLocalizacaoInicial() {
+    const [ufs, comodidades] = await Promise.all([
+      this.locationsService.getUFs(),
+      this.locationsService.getComodidades(),
+    ]);
+    this.ufs.set(ufs);
+    this.comodidadesDisponiveis.set(comodidades);
   }
 
   private buildForm() {
@@ -67,6 +88,11 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       bairro: ['', []],
       regiao_cidade: ['', []],
       endereco: ['', []],
+
+      uf_id: [null as number | null, [Validators.required]],
+      cidade_id: [null as number | null, [Validators.required]],
+      bairro_id: [null as number | null, []],
+      regiao_id: [null as number | null, []],
 
       preco: [0, [Validators.required, Validators.min(0)]],
       preco_mensal: [false, []],
@@ -93,13 +119,14 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     });
   }
 
-  ngOnInit() {
-    this.patchFormFromImovel();
+  async ngOnInit() {
+    await this.carregarLocalizacaoInicial();
+    await this.patchFormFromImovel();
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['imovel']) {
-      this.patchFormFromImovel();
+      void this.patchFormFromImovel();
     }
   }
 
@@ -117,7 +144,7 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     }
   }
 
-  private patchFormFromImovel() {
+  private async patchFormFromImovel() {
     if (this.imovel) {
       const codigo = this.imovel.imv_codigo ?? '';
       const codigoSemPrefixo = codigo.startsWith('IMV-') ? codigo.slice(4) : codigo;
@@ -132,6 +159,10 @@ export class PropertyFormComponent implements OnInit, OnChanges {
         bairro: this.imovel.bairro ?? '',
         regiao_cidade: this.imovel.regiao_cidade ?? '',
         endereco: this.imovel.endereco ?? '',
+        uf_id: this.imovel.uf_id ?? null,
+        cidade_id: this.imovel.cidade_id ?? null,
+        bairro_id: this.imovel.bairro_id ?? null,
+        regiao_id: this.imovel.regiao_id ?? null,
         preco: this.imovel.preco ?? 0,
         preco_mensal: this.imovel.preco_mensal ?? false,
         condominio_preco: this.imovel.condominio_preco ?? null,
@@ -154,6 +185,21 @@ export class PropertyFormComponent implements OnInit, OnChanges {
         active: this.imovel.active ?? true,
       });
       this.activeToggle.set(this.imovel.active ?? true);
+
+      if (this.imovel.uf_id) {
+        this.cidades.set(await this.locationsService.getCidades(this.imovel.uf_id));
+      }
+      if (this.imovel.cidade_id) {
+        const [bairros, regioes] = await Promise.all([
+          this.locationsService.getBairros(this.imovel.cidade_id),
+          this.locationsService.getRegioes(this.imovel.cidade_id),
+        ]);
+        this.bairros.set(bairros);
+        this.regioes.set(regioes);
+      }
+
+      const comodidadeIds = await this.propertiesService.getImovelComodidadeIds(this.imovel.id);
+      this.comodidadesSelecionadas.set(new Set(comodidadeIds));
     } else {
       this.form.reset({
         tipo: 'Apartamento',
@@ -165,8 +211,113 @@ export class PropertyFormComponent implements OnInit, OnChanges {
         active: true,
       });
       this.activeToggle.set(true);
+      this.cidades.set([]);
+      this.bairros.set([]);
+      this.regioes.set([]);
+      this.comodidadesSelecionadas.set(new Set());
+      const ba = this.ufs().find((uf) => uf.sigla === 'BA');
+      if (ba) {
+        this.form.patchValue({ uf_id: ba.id });
+        this.cidades.set(await this.locationsService.getCidades(ba.id));
+      }
       this.carregarProximoCodigo();
     }
+  }
+
+  async onUfChange(ufIdStr: string) {
+    const ufId = ufIdStr ? Number(ufIdStr) : null;
+    this.form.patchValue({ uf_id: ufId, cidade_id: null, bairro_id: null, regiao_id: null });
+    const uf = this.ufs().find((u) => u.id === ufId);
+    this.form.patchValue({ uf: uf?.sigla ?? '', cidade: '', bairro: '', regiao_cidade: '' });
+    this.cidades.set(ufId ? await this.locationsService.getCidades(ufId) : []);
+    this.bairros.set([]);
+    this.regioes.set([]);
+  }
+
+  async onCidadeChange(cidadeIdStr: string) {
+    const cidadeId = cidadeIdStr ? Number(cidadeIdStr) : null;
+    this.form.patchValue({ cidade_id: cidadeId, bairro_id: null, regiao_id: null });
+    const cidade = this.cidades().find((c) => c.id === cidadeId);
+    this.form.patchValue({ cidade: cidade?.nome ?? '', bairro: '', regiao_cidade: '' });
+    if (cidadeId) {
+      const [bairros, regioes] = await Promise.all([
+        this.locationsService.getBairros(cidadeId),
+        this.locationsService.getRegioes(cidadeId),
+      ]);
+      this.bairros.set(bairros);
+      this.regioes.set(regioes);
+    } else {
+      this.bairros.set([]);
+      this.regioes.set([]);
+    }
+  }
+
+  onBairroChange(bairroIdStr: string) {
+    const bairroId = bairroIdStr ? Number(bairroIdStr) : null;
+    const bairro = this.bairros().find((b) => b.id === bairroId);
+    this.form.patchValue({ bairro_id: bairroId, bairro: bairro?.nome ?? '' });
+  }
+
+  onRegiaoChange(regiaoIdStr: string) {
+    const regiaoId = regiaoIdStr ? Number(regiaoIdStr) : null;
+    const regiao = this.regioes().find((r) => r.id === regiaoId);
+    this.form.patchValue({ regiao_id: regiaoId, regiao_cidade: regiao?.nome ?? '' });
+  }
+
+  async criarCidade(nome: string) {
+    const ufId = this.form.get('uf_id')?.value;
+    if (!nome.trim() || !ufId) return;
+    const cidade = await this.locationsService.createCidade(ufId, nome.trim());
+    if (cidade) {
+      this.cidades.update((list) => [...list, cidade].sort((a, b) => a.nome.localeCompare(b.nome)));
+      this.form.patchValue({ cidade_id: cidade.id, cidade: cidade.nome, bairro_id: null, regiao_id: null });
+      this.bairros.set([]);
+      this.regioes.set([]);
+    }
+    this.criandoCidade.set(false);
+  }
+
+  async criarBairro(nome: string) {
+    const cidadeId = this.form.get('cidade_id')?.value;
+    if (!nome.trim() || !cidadeId) return;
+    const bairro = await this.locationsService.createBairro(cidadeId, nome.trim());
+    if (bairro) {
+      this.bairros.update((list) => [...list, bairro].sort((a, b) => a.nome.localeCompare(b.nome)));
+      this.form.patchValue({ bairro_id: bairro.id, bairro: bairro.nome });
+    }
+    this.criandoBairro.set(false);
+  }
+
+  async criarRegiao(nome: string) {
+    const cidadeId = this.form.get('cidade_id')?.value;
+    if (!nome.trim() || !cidadeId) return;
+    const regiao = await this.locationsService.createRegiao(cidadeId, nome.trim());
+    if (regiao) {
+      this.regioes.update((list) => [...list, regiao].sort((a, b) => a.nome.localeCompare(b.nome)));
+      this.form.patchValue({ regiao_id: regiao.id, regiao_cidade: regiao.nome });
+    }
+    this.criandoRegiao.set(false);
+  }
+
+  async criarComodidade(nome: string) {
+    if (!nome.trim()) return;
+    const comodidade = await this.locationsService.createComodidade(nome.trim());
+    if (comodidade) {
+      this.comodidadesDisponiveis.update((list) =>
+        [...list, comodidade].sort((a, b) => a.nome.localeCompare(b.nome)),
+      );
+      this.toggleComodidade(comodidade.id);
+    }
+    this.criandoComodidade.set(false);
+  }
+
+  toggleComodidade(id: number) {
+    this.comodidadesSelecionadas.update((set) => {
+      const novo = new Set(set);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
   }
 
   voltar() {
@@ -194,6 +345,10 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     try {
       const rawValue = this.form.getRawValue();
       rawValue.active = this.activeToggle();
+      rawValue.comodidades = this.comodidadesDisponiveis()
+        .filter((c) => this.comodidadesSelecionadas().has(c.id))
+        .map((c) => c.nome)
+        .join(', ');
 
       let result: Imovel | null;
 
@@ -216,6 +371,10 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       }
 
       if (result) {
+        await this.propertiesService.setImovelComodidades(
+          result.id,
+          Array.from(this.comodidadesSelecionadas()),
+        );
         this.form.markAsPristine();
         this.saved.emit(result);
       } else if (this.isNew || !this.imovel) {
