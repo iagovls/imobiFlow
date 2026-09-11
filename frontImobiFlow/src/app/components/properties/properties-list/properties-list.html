@@ -137,8 +137,8 @@
                 </div>
                 <div class="flex items-center gap-1 text-xs text-gray-500 ">
                   <svg lucideMapPin [size]="12" class="shrink-0"></svg>
-                  {{ imovel.cidade }}/{{ imovel.uf }}
-                  @if (imovel.bairro) { - {{ imovel.bairro }}}
+                  {{ imovel.cidade?.nome }}/{{ imovel.uf?.sigla }}
+                  @if (imovel.bairro) { - {{ imovel.bairro.nome }}}
                 </div>
               </div>
 

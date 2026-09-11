@@ -2,6 +2,7 @@ import { Component, Input, OnInit, Output, EventEmitter, signal, inject, compute
 import { Imovel, PropertiesService } from '../../../services/properties.service';
 import { S3Service, S3ImageItem } from '../../../services/s3.service';
 import { NgClass } from '@angular/common';
+import { CdkDropList, CdkDrag, CdkDragHandle, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   LucideArrowLeft,
   LucideUpload,
@@ -13,12 +14,29 @@ import {
   LucideFolderUp,
   LucideCheck,
   LucideLoader2,
+  LucideGripVertical,
 } from '@lucide/angular';
 
 @Component({
   selector: 'app-property-images',
   standalone: true,
-  imports: [NgClass, LucideArrowLeft, LucideUpload, LucideTrash2, LucideStar, LucideImage, LucideImageOff, LucideAlertTriangle, LucideFolderUp, LucideCheck, LucideLoader2],
+  imports: [
+    NgClass,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    LucideArrowLeft,
+    LucideUpload,
+    LucideTrash2,
+    LucideStar,
+    LucideImage,
+    LucideImageOff,
+    LucideAlertTriangle,
+    LucideFolderUp,
+    LucideCheck,
+    LucideLoader2,
+    LucideGripVertical,
+  ],
   templateUrl: './property-images.html',
   styleUrl: './property-images.css',
 })
@@ -59,16 +77,45 @@ export class PropertyImagesComponent implements OnInit {
     if (!this.imovel?.imv_codigo) return;
     this.loading.set(true);
     this.errorMessage.set(null);
-    
+
     try {
       const prefix = this.propertiesService.buildImovelKeyPrefix(this.imovel.imv_codigo);
       const lista = await this.s3Service.listImages(prefix);
-      this.imagens.set(lista);
+      this.imagens.set(this.ordenarPorPreferencia(lista));
     } catch (err) {
       console.error(err);
       this.errorMessage.set('Erro ao carregar galeria de imagens.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private ordenarPorPreferencia(lista: S3ImageItem[]): S3ImageItem[] {
+    const ordem = this.imovel?.imagens_ordem ?? [];
+    if (ordem.length === 0) return lista;
+
+    const posicao = new Map(ordem.map((key, index) => [key, index]));
+    return [...lista].sort((a, b) => {
+      const posA = posicao.has(a.key) ? posicao.get(a.key)! : ordem.length + lista.indexOf(a);
+      const posB = posicao.has(b.key) ? posicao.get(b.key)! : ordem.length + lista.indexOf(b);
+      return posA - posB;
+    });
+  }
+
+  onReorder(event: CdkDragDrop<S3ImageItem[]>) {
+    const lista = [...this.imagens()];
+    moveItemInArray(lista, event.previousIndex, event.currentIndex);
+    this.imagens.set(lista);
+    void this.salvarOrdem(lista);
+  }
+
+  private async salvarOrdem(lista: S3ImageItem[]) {
+    if (!this.imovel?.imv_codigo) return;
+    const ordem = lista.map((i) => i.key);
+    const atualizado = await this.propertiesService.setImagensOrdem(this.imovel.imv_codigo, ordem);
+    if (atualizado) {
+      this.imovel = atualizado;
+      this.principalChanged.emit(atualizado);
     }
   }
 
@@ -144,6 +191,7 @@ export class PropertyImagesComponent implements OnInit {
             lastModified: new Date().toISOString(),
           };
           this.imagens.update((lista) => [novaImagem, ...lista]);
+          void this.salvarOrdem(this.imagens());
 
           if (!this.imagemPrincipalUrl()) {
             await this.definirComoPrincipal(novaImagem, true);
@@ -183,6 +231,7 @@ export class PropertyImagesComponent implements OnInit {
       if (sucesso) {
         const eraPrincipal = this.resolveUrl(img.key) === this.imagemPrincipalUrl();
         this.imagens.update((lista) => lista.filter((i) => i.key !== img.key));
+        void this.salvarOrdem(this.imagens());
 
         if (eraPrincipal) {
           this.imagemPrincipalUrl.set(null);

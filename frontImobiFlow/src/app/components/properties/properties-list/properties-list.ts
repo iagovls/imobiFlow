@@ -73,8 +73,8 @@ export class PropertiesListComponent implements OnInit {
     if (query) {
       lista = lista.filter((i) => {
         const titulo = i.titulo?.toLowerCase() ?? '';
-        const cidade = i.cidade?.toLowerCase() ?? '';
-        const bairro = i.bairro?.toLowerCase() ?? '';
+        const cidade = i.cidade?.nome.toLowerCase() ?? '';
+        const bairro = i.bairro?.nome.toLowerCase() ?? '';
         const codigo = i.imv_codigo?.toLowerCase() ?? '';
         const tipo = i.tipo?.toLowerCase() ?? '';
         return (

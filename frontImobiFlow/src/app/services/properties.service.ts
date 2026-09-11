@@ -13,9 +13,6 @@ export interface Imovel {
   fonte_url: string | null;
   suites: number | null;
   tipo: string;
-  uf: string;
-  cidade: string;
-  regiao_cidade: string | null;
   endereco: string | null;
   preco: number;
   preco_mensal: boolean;
@@ -30,7 +27,6 @@ export interface Imovel {
   banheiros: number | null;
   imagem_principal: string | null;
   destaques: string | null;
-  bairro: string | null;
   atualizado_em: string | null;
   aceita_pet: boolean | null;
   finalidade: Finalidade;
@@ -40,13 +36,22 @@ export interface Imovel {
   condicoes: string | null;
   restricoes: string | null;
   active: boolean | null;
-  uf_id: number | null;
-  cidade_id: number | null;
+  uf_id: number;
+  cidade_id: number;
   bairro_id: number | null;
   regiao_id: number | null;
+  imagens_ordem: string[];
+  /** Relação embutida (read-only), vinda do JOIN no select do PostgREST. */
+  uf?: { id: number; sigla: string; nome: string };
+  cidade?: { id: number; nome: string };
+  bairro?: { id: number; nome: string } | null;
+  regiao?: { id: number; nome: string } | null;
 }
 
-export type ImovelCreate = Omit<Imovel, 'id' | 'created_at' | 'atualizado_em'>;
+export type ImovelCreate = Omit<
+  Imovel,
+  'id' | 'created_at' | 'atualizado_em' | 'uf' | 'cidade' | 'bairro' | 'regiao'
+>;
 export type ImovelUpdate = Partial<ImovelCreate> & { imv_codigo: string };
 
 export interface ImovelImage {
@@ -74,7 +79,10 @@ export class PropertiesService {
 
   async getImoveis(onlyActive = false): Promise<Imovel[]> {
     const client = this.withSchema();
-    let query = client.from('imoveis').select('*').order('created_at', { ascending: false });
+    let query = client
+      .from('imoveis')
+      .select('*, uf:uf(id,sigla,nome), cidade:cidades(id,nome), bairro:bairros(id,nome), regiao:regioes(id,nome)')
+      .order('created_at', { ascending: false });
 
     if (onlyActive) {
       query = query.eq('active', true);
@@ -108,7 +116,11 @@ export class PropertiesService {
 
   async getImovelByCodigo(codigo: string): Promise<Imovel | null> {
     const client = this.withSchema();
-    const { data, error } = await client.from('imoveis').select('*').eq('imv_codigo', codigo).maybeSingle();
+    const { data, error } = await client
+      .from('imoveis')
+      .select('*, uf:uf(id,sigla,nome), cidade:cidades(id,nome), bairro:bairros(id,nome), regiao:regioes(id,nome)')
+      .eq('imv_codigo', codigo)
+      .maybeSingle();
 
     if (error) {
       console.error('[PropertiesService] Erro ao buscar imóvel por código:', error.message);
@@ -203,6 +215,10 @@ export class PropertiesService {
 
   async setImagemPrincipal(codigo: string, imagem_url: string | null): Promise<Imovel | null> {
     return this.updateImovel({ imv_codigo: codigo, imagem_principal: imagem_url });
+  }
+
+  async setImagensOrdem(codigo: string, ordem: string[]): Promise<Imovel | null> {
+    return this.updateImovel({ imv_codigo: codigo, imagens_ordem: ordem });
   }
 
   async setImovelComodidades(imovelId: number, comodidadeIds: number[]): Promise<boolean> {

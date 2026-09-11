@@ -172,7 +172,7 @@ export class DashboardComponent implements OnInit {
     const counts = new Map<string, number>();
     for (const i of this.imoveis()) {
       if (!i.bairro) continue;
-      counts.set(i.bairro, (counts.get(i.bairro) || 0) + 1);
+      counts.set(i.bairro.nome, (counts.get(i.bairro.nome) || 0) + 1);
     }
     return Array.from(counts.entries())
       .map(([label, value]) => ({ label, value }))

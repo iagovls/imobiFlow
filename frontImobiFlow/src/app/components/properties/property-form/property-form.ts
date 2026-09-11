@@ -85,10 +85,6 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       finalidade: ['venda' as Finalidade, [Validators.required]],
       fonte_url: ['', []],
 
-      uf: ['BA', [Validators.required]],
-      cidade: ['', [Validators.required]],
-      bairro: ['', []],
-      regiao_cidade: ['', []],
       endereco: ['', []],
 
       uf_id: [null as number | null, [Validators.required]],
@@ -156,10 +152,6 @@ export class PropertyFormComponent implements OnInit, OnChanges {
         tipo: this.imovel.tipo ?? 'Apartamento',
         finalidade: this.imovel.finalidade ?? 'venda',
         fonte_url: this.imovel.fonte_url ?? '',
-        uf: this.imovel.uf ?? 'BA',
-        cidade: this.imovel.cidade ?? '',
-        bairro: this.imovel.bairro ?? '',
-        regiao_cidade: this.imovel.regiao_cidade ?? '',
         endereco: this.imovel.endereco ?? '',
         uf_id: this.imovel.uf_id ?? null,
         cidade_id: this.imovel.cidade_id ?? null,
@@ -206,7 +198,6 @@ export class PropertyFormComponent implements OnInit, OnChanges {
       this.form.reset({
         tipo: 'Apartamento',
         finalidade: 'venda',
-        uf: 'BA',
         preco: 0,
         preco_mensal: false,
         aceita_pet: true,
@@ -229,8 +220,6 @@ export class PropertyFormComponent implements OnInit, OnChanges {
   async onUfChange(ufIdStr: string) {
     const ufId = ufIdStr ? Number(ufIdStr) : null;
     this.form.patchValue({ uf_id: ufId, cidade_id: null, bairro_id: null, regiao_id: null });
-    const uf = this.ufs().find((u) => u.id === ufId);
-    this.form.patchValue({ uf: uf?.sigla ?? '', cidade: '', bairro: '', regiao_cidade: '' });
     this.cidades.set(ufId ? await this.locationsService.getCidades(ufId) : []);
     this.bairros.set([]);
     this.regioes.set([]);
@@ -239,8 +228,6 @@ export class PropertyFormComponent implements OnInit, OnChanges {
   async onCidadeChange(cidadeIdStr: string) {
     const cidadeId = cidadeIdStr ? Number(cidadeIdStr) : null;
     this.form.patchValue({ cidade_id: cidadeId, bairro_id: null, regiao_id: null });
-    const cidade = this.cidades().find((c) => c.id === cidadeId);
-    this.form.patchValue({ cidade: cidade?.nome ?? '', bairro: '', regiao_cidade: '' });
     if (cidadeId) {
       const [bairros, regioes] = await Promise.all([
         this.locationsService.getBairros(cidadeId),
@@ -256,14 +243,12 @@ export class PropertyFormComponent implements OnInit, OnChanges {
 
   onBairroChange(bairroIdStr: string) {
     const bairroId = bairroIdStr ? Number(bairroIdStr) : null;
-    const bairro = this.bairros().find((b) => b.id === bairroId);
-    this.form.patchValue({ bairro_id: bairroId, bairro: bairro?.nome ?? '' });
+    this.form.patchValue({ bairro_id: bairroId });
   }
 
   onRegiaoChange(regiaoIdStr: string) {
     const regiaoId = regiaoIdStr ? Number(regiaoIdStr) : null;
-    const regiao = this.regioes().find((r) => r.id === regiaoId);
-    this.form.patchValue({ regiao_id: regiaoId, regiao_cidade: regiao?.nome ?? '' });
+    this.form.patchValue({ regiao_id: regiaoId });
   }
 
   async criarCidade(nome: string) {
@@ -272,7 +257,7 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     const cidade = await this.locationsService.createCidade(ufId, nome.trim());
     if (cidade) {
       this.cidades.update((list) => [...list, cidade].sort((a, b) => a.nome.localeCompare(b.nome)));
-      this.form.patchValue({ cidade_id: cidade.id, cidade: cidade.nome, bairro_id: null, regiao_id: null });
+      this.form.patchValue({ cidade_id: cidade.id, bairro_id: null, regiao_id: null });
       this.bairros.set([]);
       this.regioes.set([]);
     }
@@ -285,7 +270,7 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     const bairro = await this.locationsService.createBairro(cidadeId, nome.trim());
     if (bairro) {
       this.bairros.update((list) => [...list, bairro].sort((a, b) => a.nome.localeCompare(b.nome)));
-      this.form.patchValue({ bairro_id: bairro.id, bairro: bairro.nome });
+      this.form.patchValue({ bairro_id: bairro.id });
     }
     this.criandoBairro.set(false);
   }
@@ -296,7 +281,7 @@ export class PropertyFormComponent implements OnInit, OnChanges {
     const regiao = await this.locationsService.createRegiao(cidadeId, nome.trim());
     if (regiao) {
       this.regioes.update((list) => [...list, regiao].sort((a, b) => a.nome.localeCompare(b.nome)));
-      this.form.patchValue({ regiao_id: regiao.id, regiao_cidade: regiao.nome });
+      this.form.patchValue({ regiao_id: regiao.id });
     }
     this.criandoRegiao.set(false);
   }

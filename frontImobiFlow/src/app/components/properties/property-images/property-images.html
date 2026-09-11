@@ -148,14 +148,29 @@
             </p>
           </div>
         } @else {
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <p class="text-xs text-gray-400 -mt-1">Arraste pela alça para reordenar as fotos.</p>
+          <div
+            cdkDropList
+            cdkDropListOrientation="mixed"
+            [cdkDropListData]="imagens()"
+            (cdkDropListDropped)="onReorder($event)"
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+          >
             @for (img of imagens(); track img.key) {
               <figure
+                cdkDrag
                 class="group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200"
                 [ngClass]="isPrincipal(img)
                   ? 'border-amber-400 ring-2 ring-amber-200 shadow-lg shadow-amber-100'
                   : 'border-gray-200 hover:border-gray-400 hover:shadow-md'"
               >
+                <div
+                  cdkDragHandle
+                  class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-7 h-7 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-move"
+                  title="Arraste para reordenar"
+                >
+                  <svg lucideGripVertical [size]="14"></svg>
+                </div>
                 <img
                   [src]="img.url"
                   [alt]="'Foto do imóvel ' + (img.key.split('/').pop() || '')"
@@ -217,6 +232,7 @@
             }
           </div>
         }
+
       </section>
     </div>
   </div>

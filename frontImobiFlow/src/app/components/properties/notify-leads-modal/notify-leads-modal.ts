@@ -106,8 +106,8 @@ export class NotifyLeadsModalComponent implements OnInit {
 
     if (p.tipo && normalizar(p.tipo) !== normalizar(i.tipo)) return false;
     if (p.finalidade && p.finalidade !== i.finalidade) return false;
-    if (p.cidade && !contemNormalizado(i.cidade, p.cidade)) return false;
-    if (p.bairro && !contemNormalizado(i.bairro, p.bairro)) return false;
+    if (p.cidade && !contemNormalizado(i.cidade?.nome, p.cidade)) return false;
+    if (p.bairro && !contemNormalizado(i.bairro?.nome, p.bairro)) return false;
 
     if (p.quartos != null && i.quartos != null) {
       if (Math.abs(i.quartos - p.quartos) > 2) return false;
@@ -137,8 +137,8 @@ export class NotifyLeadsModalComponent implements OnInit {
     const i = this.imovel;
     const preco = this.propertiesService.formatCurrency(i.preco);
     let msg = `Encontramos um imóvel que pode te interessar!\n\n${i.imv_codigo} — ${i.titulo || i.tipo}\n${preco}`;
-    if (i.bairro) msg += `\n${i.bairro}, ${i.cidade}`;
-    else msg += `\n${i.cidade}`;
+    if (i.bairro) msg += `\n${i.bairro.nome}, ${i.cidade?.nome}`;
+    else msg += `\n${i.cidade?.nome}`;
     if (i.fonte_url) msg += `\n\n${i.fonte_url}`;
     return msg;
   }

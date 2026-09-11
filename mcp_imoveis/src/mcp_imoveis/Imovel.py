@@ -65,11 +65,17 @@ class Imovel:
         limite: int = 100,
     ) -> list[dict[str, Any]]:
         # cidade/bairro/uf viraram tabelas normalizadas (pierre.cidades/bairros/uf) —
-        # imoveis.cidade_id/bairro_id sao a fonte de verdade; imoveis.cidade/bairro
-        # (texto) ainda existem por compatibilidade mas nao sao mais usados aqui.
-        selected_columns = sql.SQL(", ").join(
-            sql.SQL("i.{}").format(sql.Identifier(coluna)) for coluna in self.colunas
-        )
+        # imoveis.cidade_id/bairro_id sao a unica fonte de verdade; as colunas de
+        # texto imoveis.cidade/bairro foram removidas do banco, entao "cidade"/
+        # "bairro" em `colunas` sao resolvidas via JOIN (c.nome/b.nome) abaixo.
+        def _select_expr(coluna: str) -> sql.Composable:
+            if coluna == "cidade":
+                return sql.SQL("c.nome AS cidade")
+            if coluna == "bairro":
+                return sql.SQL("b.nome AS bairro")
+            return sql.SQL("i.{}").format(sql.Identifier(coluna))
+
+        selected_columns = sql.SQL(", ").join(_select_expr(coluna) for coluna in self.colunas)
         query = sql.SQL(
             "SELECT {} FROM {}.{} i "
             "LEFT JOIN {}.cidades c ON c.id = i.cidade_id "
