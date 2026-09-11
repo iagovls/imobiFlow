@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `buscar_imoveis` — queries a real-estate table in a **Supabase PostgreSQL** database.
 - `consultar_faq` — ranks entries in a local `data/faq.json` against a natural-language question.
 
-It is one independent project inside a larger multi-project repo (`../` — n8n + Evolution API + Angular + Spring Boot). See `../AGENTS.md` for the wider picture. This directory has its own toolchain and its own `.env` (separate from the root `.env`).
+It is one independent project inside a larger multi-project repo (`../` — n8n + WhatsApp Cloud API (Meta) + Angular + Spring Boot). See `../AGENTS.md` for the wider picture. This directory has its own toolchain and its own `.env` (separate from the root `.env`).
 
 ## Commands
 

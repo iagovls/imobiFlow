@@ -6,7 +6,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -14,7 +13,6 @@ services:
       - app_network
     depends_on:
       - n8n
-      - evolution
 
   postgres:
     image: postgres:16.4-alpine
@@ -45,8 +43,6 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - N8N_POSTGRES_DB=${N8N_POSTGRES_DB}
-      - EVOLUTION_POSTGRES_DB=${EVOLUTION_POSTGRES_DB}
-      - EVOLUTION_DB_SCHEMA=${EVOLUTION_DB_SCHEMA}
     networks:
       - app_network
     depends_on:
@@ -61,10 +57,6 @@ services:
         if [ "$$(psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$${N8N_POSTGRES_DB}'")" != "1" ]; then
           createdb -h postgres -U "$${POSTGRES_USER}" "$${N8N_POSTGRES_DB}"
         fi
-        if [ "$$(psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$${EVOLUTION_POSTGRES_DB}'")" != "1" ]; then
-          createdb -h postgres -U "$${POSTGRES_USER}" "$${EVOLUTION_POSTGRES_DB}"
-        fi
-        psql -h postgres -U "$${POSTGRES_USER}" -d "$${EVOLUTION_POSTGRES_DB}" -v ON_ERROR_STOP=1 -c "CREATE SCHEMA IF NOT EXISTS \"$${EVOLUTION_DB_SCHEMA}\";"
   # Redis
   redis:
     image: redis:7.2-alpine
@@ -198,81 +190,10 @@ services:
     depends_on:
       - n8n
 
-  # Evolution API
-  evolution:
-    image: evoapicloud/evolution-api:v2.3.7
-    container_name: evolution_api
-    restart: unless-stopped
-    environment:
-      - SERVER_TYPE=http
-      - SERVER_PORT=${EVOLUTION_PORT}
-      - SERVER_URL=${EVOLUTION_SERVER_URL}
-      - LOG_LEVEL=${EVOLUTION_LOG_LEVEL}
-      - LOG_COLOR=true
-      - LOG_BAILEYS=error
-      - CORS_ORIGIN=*
-      - CORS_METHODS=GET,POST,PUT,DELETE
-      - CORS_CREDENTIALS=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${EVOLUTION_POSTGRES_DB}?schema=${EVOLUTION_DB_SCHEMA}&sslmode=disable
-      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
-      - DATABASE_SAVE_DATA_INSTANCE=true
-      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
-      - DATABASE_SAVE_MESSAGE_UPDATE=true
-      - DATABASE_SAVE_DATA_CONTACTS=true
-      - DATABASE_SAVE_DATA_CHATS=true
-      - DATABASE_SAVE_DATA_LABELS=true
-      - DATABASE_SAVE_DATA_HISTORIC=true
-      # Redis (use a mesma senha do redis acima)
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://:${REDIS_PASSWORD}@redis:6379
-      - CACHE_REDIS_PREFIX_KEY=${EVOLUTION_CACHE_REDIS_PREFIX_KEY}
-      - CACHE_REDIS_SAVE_INSTANCES=false
-      - RABBITMQ_ENABLED=false
-      - WEBSOCKET_ENABLED=false
-      - WEBHOOK_GLOBAL_ENABLED=false
-      - WEBHOOK_GLOBAL_URL=${EVOLUTION_WEBHOOK_GLOBAL_URL}
-      - WEBHOOK_EVENTS_QRCODE_UPDATED=true
-      - WEBHOOK_EVENTS_MESSAGES_UPSERT=true
-      - WEBHOOK_EVENTS_MESSAGES_UPDATE=true
-      - WEBHOOK_EVENTS_CONNECTION_UPDATE=true
-      - QRCODE_LIMIT=30
-      - QRCODE_COLOR=#175197
-      - CONFIG_SESSION_PHONE_CLIENT=Evolution API
-      - CONFIG_SESSION_PHONE_NAME=Chrome
-      # API Key (ALTERE AQUI - importante!)
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      - TYPEBOT_ENABLED=false
-      - CHATWOOT_ENABLED=false
-      - OPENAI_ENABLED=false
-      - DIFY_ENABLED=false
-      - S3_ENABLED=false
-      - TZ=America/Sao_Paulo
-      - DEL_INSTANCE=false
-    expose:
-      - "8080"
-    volumes:
-      - evolution_instances:/evolution/instances
-      - evolution_store:/evolution/store
-    networks:
-      - app_network
-    depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      postgres-init:
-        condition: service_completed_successfully
-
 volumes:
   redis_data:
     driver: local
   n8n_data:
-    driver: local
-  evolution_instances:
-    driver: local
-  evolution_store:
     driver: local
   postgres_data:
     driver: local

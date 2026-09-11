@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-Multi-project repo for **ImobiFlow** — a real estate platform integrating n8n automation, WhatsApp (Evolution API), AI (Dify), and a property CRM.
+Multi-project repo for **ImobiFlow** — a real estate platform integrating n8n automation, WhatsApp (Meta Cloud API), AI (Dify), and a property CRM.
 
 **NOT a monorepo.** Each subdirectory is an independent project with its own toolchain.
 
@@ -14,7 +14,7 @@ Multi-project repo for **ImobiFlow** — a real estate platform integrating n8n 
 | `frontImobiFlow/` | Angular 21 / Tailwind 4 / Vitest / SSR | `npm run start` |
 | `mcp_imoveis/` | Python 3.11+ / FastMCP 3 / psycopg | `uvicorn app:app` or Docker |
 | `dify/` | Dify AI platform (pnpm monorepo) | Separate git repo — use `dify/` root |
-| Root `docker-compose.yml` | n8n + Evolution API + Postgres + Redis + nginx | `docker compose up -d` |
+| Root `docker-compose.yml` | n8n + Postgres + Redis + nginx | `docker compose up -d` |
 
 ## Critical Quirks
 
@@ -42,8 +42,9 @@ It has its own `.git/`. Do NOT treat changes here as part of the root repo. See 
 - Build: `pip install -e .` or use Docker
 
 ### Root `docker-compose.yml`
-- Services: nginx, postgres, redis, n8n, n8n-worker, evolution, mcp_imoveis, cloudflared
-- nginx routes: port 80 → n8n, port 8080 → Evolution API
+- Services: nginx, postgres, redis, n8n, n8n-worker, mcp_imoveis, cloudflared
+- nginx routes: port 80 → n8n
+- WhatsApp channel is the official **Meta WhatsApp Cloud API**, consumed directly by n8n's WhatsApp nodes via `META_ACCESS_TOKEN` — no self-hosted WhatsApp gateway
 - Postgres has init script (`postgres-init`) that creates databases
 - **Schema do banco de dados: `pierre`**
 - `.env` file contains **real credentials** — never commit secrets
@@ -77,7 +78,7 @@ cd mcp_imoveis && python app.py
 Root `.env` is required for Docker Compose. Key vars:
 - `POSTGRES_*` — local PostgreSQL credentials
 - `SUPABASE_*` — Supabase PostgreSQL (remote)
-- `EVOLUTION_API_KEY` — WhatsApp API authentication
+- `META_ACCESS_TOKEN` — WhatsApp Cloud API (Meta) authentication
 - `REDIS_PASSWORD` — Redis auth
 - `CLOUDFLARE_TUNNEL_TOKEN` — external access
 - `META_ACCESS_TOKEN` — Meta/WhatsApp API

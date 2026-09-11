@@ -1,6 +1,6 @@
 # ImobiFlow
 
-Plataforma imobiliária completa com CRM, automação de workflows via n8n, integração com WhatsApp (Evolution API), IA via Dify e MCP Server para consultas a imóveis.
+Plataforma imobiliária completa com CRM, automação de workflows via n8n, integração com WhatsApp (Meta WhatsApp Cloud API), IA via Dify e MCP Server para consultas a imóveis.
 
 ---
 
@@ -12,7 +12,7 @@ ImobiFlow/
 ├── frontImobiFlow/             # Frontend Angular 21 + Tailwind CSS v4 + SSR
 ├── mcp_imoveis/                # MCP Server Python (FastMCP v3) → Supabase PostgreSQL
 ├── dify/                       # Sub-repo Dify (plataforma de IA/RAG)
-├── docker-compose.yml          # Infra completa: n8n + Evolution + Postgres + Redis + Nginx
+├── docker-compose.yml          # Infra completa: n8n + Postgres + Redis + Nginx
 ├── nginx.conf                  # Configuração de proxy reverso (desenvolvimento)
 └── nginx.conf.prod             # Configuração de produção com SSL (Let's Encrypt)
 ```
@@ -30,14 +30,15 @@ ImobiFlow/
 
 | Serviço | Imagem | Porta | Descrição |
 |---|---|---|---|
-| **nginx** | `nginx:1.25-alpine` | 80 / 443 / 8080 | Proxy reverso + SSL |
-| **postgres** | `postgres:16.4-alpine` | 5432 | Banco de dados principal (n8n + Evolution) |
+| **nginx** | `nginx:1.25-alpine` | 80 / 443 | Proxy reverso + SSL |
+| **postgres** | `postgres:16.4-alpine` | 5432 | Banco de dados principal (n8n) |
 | **redis** | `redis:7.2-alpine` | 6379 | Cache e filas (BullMQ) |
-| **n8n** | `n8nio/n8n:2.26.4` | 5678 | Automação de workflows |
-| **n8n-worker** | `n8nio/n8n:2.26.4` | — | Worker de fila do n8n |
-| **evolution** | `evoapicloud/evolution-api:v2.3.7` | 8080 (exp) | API WhatsApp |
+| **n8n** | `n8nio/n8n:2.37.9` | 5678 | Automação de workflows |
+| **n8n-worker** | `n8nio/n8n:2.37.9` | — | Worker de fila do n8n |
 | **mcp_imoveis** | Build local | 8000 | MCP Server de imóveis |
 | **cloudflared** | `cloudflare/cloudflared` | — | Tunnel Cloudflare (acesso externo HTTPS) |
+
+> WhatsApp é a **API oficial da Meta (WhatsApp Cloud API)**, consumida diretamente pelos nodes de WhatsApp do n8n via `META_ACCESS_TOKEN` — não há gateway de WhatsApp self-hosted na infra.
 
 ---
 
@@ -123,20 +124,19 @@ Fluxo:
  ┌─────────────────────────────────────────────────────────────┐
  │                        nginx (80/443)                       │
  │  80    /  →  n8n:5678                                       │
- │  8080 /  →  evolution:8080                                  │
- └────────┬──────────────────────────┬─────────────────────────┘
-          │                          │
-          ▼                          ▼
+ └────────┬────────────────────────────────────────────────────┘
+          │
+          ▼
  ┌────────────────┐         ┌────────────────────┐
- │  n8n (5678)    │         │  Evolution API     │
- │  + worker      │         │  (WhatsApp)        │
- │  queue (Bull)  │         └─────────┬──────────┘
- └──┬─────────┬───┘                   │
-    │         │                       │
-    ▼         ▼                       ▼
- ┌────────┐ ┌───────┐          ┌────────────────┐
- │Postgres│ │ Redis  │◄─────────┤                │
- └────────┘ └───────┘          └────────────────┘
+ │  n8n (5678)    │◄────────┤  WhatsApp Cloud API │
+ │  + worker      │         │  (Meta, externa)    │
+ │  queue (Bull)  │         └────────────────────┘
+ └──┬─────────┬───┘
+    │         │
+    ▼         ▼
+ ┌────────┐ ┌───────┐
+ │Postgres│ │ Redis  │
+ └────────┘ └───────┘
      ▲
      │ Conexão separada (Supabase)
      ▼
