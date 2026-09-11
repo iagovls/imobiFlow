@@ -3,6 +3,9 @@ import { DatePipe } from '@angular/common';
 import { WhatsappIconComponent } from '../../icons/whatsapp-icon-component/whatsapp-icon-component';
 import { Visita, VisitsService } from '../../../services/visits.service';
 import { LeadsService } from '../../../services/leads.service';
+import { GoogleCalendarEvent, GoogleCalendarService } from '../../../services/google-calendar.service';
+
+type ViewSource = 'db' | 'google';
 
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -27,17 +30,38 @@ function diaKey(date: Date): string {
   imports: [DatePipe, WhatsappIconComponent],
   template: `
     <div class="flex flex-col w-full h-full min-h-0 gap-3">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between flex-wrap gap-2">
         <h2 class="text-lg font-semibold text-gray-900">Agenda</h2>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-          (click)="createNew.emit()"
-        >
-          + Nova visita
-        </button>
+        <div class="flex items-center gap-3">
+          <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-sm">
+            <button
+              type="button"
+              class="px-3 py-1 rounded-md transition-colors"
+              [class]="viewSource() === 'db' ? 'bg-white shadow-sm font-medium text-gray-900' : 'text-gray-500'"
+              (click)="selectSource('db')"
+            >
+              Banco de dados
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1 rounded-md transition-colors"
+              [class]="viewSource() === 'google' ? 'bg-white shadow-sm font-medium text-gray-900' : 'text-gray-500'"
+              (click)="selectSource('google')"
+            >
+              Google Agenda
+            </button>
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            (click)="createNew.emit()"
+          >
+            + Nova visita
+          </button>
+        </div>
       </div>
 
+      @if (viewSource() === 'db') {
       <div class="flex-1 min-h-0 overflow-y-auto flex flex-col lg:flex-row gap-4">
         <div class="lg:w-[380px] shrink-0 rounded-xl border border-gray-200 bg-white p-3">
           <div class="flex items-center justify-between mb-3">
@@ -153,6 +177,54 @@ function diaKey(date: Date): string {
           }
         </div>
       </div>
+      } @else {
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          @if (!googleConnected()) {
+            <div
+              class="h-full flex flex-col items-center justify-center gap-3 text-center border border-dashed border-gray-300 rounded-xl p-6"
+            >
+              <p class="text-sm text-gray-600 max-w-sm">
+                Conecte sua conta do Google pra ver sua agenda pessoal aqui, além das visitas do CRM.
+              </p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                (click)="connectGoogle()"
+              >
+                Conectar Google Agenda
+              </button>
+            </div>
+          } @else if (loadingGoogle()) {
+            <div class="h-full flex items-center justify-center text-gray-500 text-sm">Carregando...</div>
+          } @else if (googleEvents().length === 0) {
+            <div
+              class="h-full flex items-center justify-center text-gray-500 text-sm border border-dashed border-gray-300 rounded-xl"
+            >
+              Nenhum evento próximo no seu Google Agenda.
+            </div>
+          } @else {
+            <div class="flex flex-col gap-2">
+              @for (ev of googleEvents(); track ev.id) {
+                <a
+                  [href]="ev.htmlLink ?? '#'"
+                  target="_blank"
+                  class="block rounded-lg bg-white border border-gray-200 shadow-sm p-3 hover:border-indigo-300 transition-colors"
+                >
+                  <span class="font-medium text-gray-900 text-sm">{{ ev.summary }}</span>
+                  @if (ev.start) {
+                    <div class="text-xs text-gray-500 mt-0.5">
+                      {{ ev.start | date: 'dd/MM/yyyy' }} às {{ ev.start | date: 'HH:mm' }}
+                    </div>
+                  }
+                  @if (ev.attendees.length > 0) {
+                    <div class="text-xs text-gray-500 mt-1 truncate">{{ ev.attendees.join(', ') }}</div>
+                  }
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
     </div>
   `,
 })
@@ -162,6 +234,11 @@ export class AgendaCalendarComponent implements OnInit {
   mesAtual = signal<Date>(new Date());
   selectedDate = signal<Date | null>(null);
 
+  viewSource = signal<ViewSource>('db');
+  googleConnected = signal(false);
+  googleEvents = signal<GoogleCalendarEvent[]>([]);
+  loadingGoogle = signal(false);
+
   diasSemana = DIAS_SEMANA;
 
   @Output() createNew = new EventEmitter<void>();
@@ -170,6 +247,7 @@ export class AgendaCalendarComponent implements OnInit {
   constructor(
     private visitsService: VisitsService,
     public leadsService: LeadsService,
+    private googleCalendarService: GoogleCalendarService,
   ) {}
 
   nomeMes = computed(() => MESES[this.mesAtual().getMonth()]);
@@ -228,12 +306,42 @@ export class AgendaCalendarComponent implements OnInit {
 
   async ngOnInit() {
     await this.reload();
+    this.googleConnected.set(await this.googleCalendarService.isConnected());
+
+    const params = new URLSearchParams(window.location.search);
+    const googleStatus = params.get('google_calendar');
+    if (googleStatus) {
+      window.history.replaceState({}, '', window.location.pathname);
+      if (googleStatus === 'connected') {
+        this.googleConnected.set(true);
+        this.selectSource('google');
+      }
+    }
   }
 
   async reload() {
     this.loading.set(true);
     this.visitas.set(await this.visitsService.getVisitas());
     this.loading.set(false);
+  }
+
+  async selectSource(source: ViewSource) {
+    this.viewSource.set(source);
+    if (source === 'google' && this.googleConnected() && this.googleEvents().length === 0) {
+      await this.loadGoogleEvents();
+    }
+  }
+
+  async connectGoogle() {
+    await this.googleCalendarService.connect();
+  }
+
+  async loadGoogleEvents() {
+    this.loadingGoogle.set(true);
+    const result = await this.googleCalendarService.getEvents();
+    this.googleConnected.set(result.connected);
+    this.googleEvents.set(result.events);
+    this.loadingGoogle.set(false);
   }
 
   prevMes() {
