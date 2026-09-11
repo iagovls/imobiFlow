@@ -24,7 +24,7 @@ import { PropertiesService } from '../../../services/properties.service';
         <h2 class="text-lg font-semibold text-gray-900">Negociações</h2>
         <button
           type="button"
-          class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+          class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
           (click)="createNew.emit()"
         >
           + Nova negociação
@@ -62,7 +62,7 @@ import { PropertiesService } from '../../../services/properties.service';
                     <div
                       cdkDrag
                       [cdkDragData]="n"
-                      class="rounded-lg bg-white border border-gray-200 shadow-sm p-3 cursor-move hover:border-indigo-300 transition-colors"
+                      class="rounded-lg bg-white border border-gray-200 shadow-sm p-3 cursor-move hover:border-emerald-300 transition-colors"
                     >
                       <div class="flex items-start justify-between gap-2">
                         <div class="flex flex-col gap-0.5 min-w-0">
@@ -91,7 +91,7 @@ import { PropertiesService } from '../../../services/properties.service';
                       @if (n.valor_proposta) {
                         <div class="mt-2">
                           <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-semibold text-[0.75rem]"
+                            class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold text-[0.75rem]"
                             >{{ propertiesService.formatCurrency(n.valor_proposta) }}</span
                           >
                         </div>
@@ -99,7 +99,7 @@ import { PropertiesService } from '../../../services/properties.service';
 
                       <button
                         type="button"
-                        class="mt-2 text-xs text-indigo-600 hover:underline"
+                        class="mt-2 text-xs text-emerald-600 hover:underline"
                         (click)="edit.emit(n)"
                       >
                         Editar

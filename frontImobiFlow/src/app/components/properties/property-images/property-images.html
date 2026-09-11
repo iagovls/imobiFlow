@@ -11,7 +11,7 @@
       </button>
       <div class="flex flex-col gap-0.5">
         <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <svg lucideImage [size]="20" class="text-blue-600"></svg>
+          <svg lucideImage [size]="20" class="text-emerald-600"></svg>
           Galeria de Imagens
         </h2>
         <p class="text-xs text-gray-500">
@@ -49,7 +49,7 @@
         (drop)="onDrop($event)"
         class="relative border-2 border-dashed rounded-2 rounded-xl p-8 text-center transition-all duration-200 cursor-pointer"
         [ngClass]="dragging()
-          ? 'border-blue-400 bg-blue-50 scale-[1.01]'
+          ? 'border-emerald-400 bg-emerald-50 scale-[1.01]'
           : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-white'"
       >
         <label class="block cursor-pointer">
@@ -63,7 +63,7 @@
           <div class="flex flex-col items-center gap-3 pointer-events-none select-none">
             <div
               class="w-16 h-16 rounded-2xl flex items-center justify-center transition-colors"
-              [ngClass]="dragging() ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'"
+              [ngClass]="dragging() ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'"
             >
               <svg lucideFolderUp [size]="32"></svg>
             </div>
@@ -72,7 +72,7 @@
                 Arraste e solte as imagens aqui
               </p>
               <p class="text-sm text-gray-500">
-                  ou <span class="text-blue-600 font-medium hover:underline">clique para selecionar</span>
+                  ou <span class="text-emerald-600 font-medium hover:underline">clique para selecionar</span>
                 </p>
               <p class="text-xs text-gray-400">
                 JPG, PNG, WEBP — múltiplos arquivos permitidos
@@ -97,7 +97,7 @@
       @if (hasUploads()) {
         <section class="space-y-2">
           <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <svg lucideLoader2 [size]="14" class="animate-spin text-blue-600"></svg>
+            <svg lucideLoader2 [size]="14" class="animate-spin text-emerald-600"></svg>
             Enviando...
           </h3>
           @for (entry of uploadEntries(); track entry[0]) {
@@ -108,7 +108,7 @@
             </div>
               <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-blue-500 rounded-full transition-all duration-300"
+                  class="h-full bg-emerald-500 rounded-full transition-all duration-300"
                   [style.width]="entry[1] + '%'"
                 ></div>
               </div>
@@ -134,7 +134,7 @@
         @if (loading()) {
           <div class="flex items-center justify-center py-16">
             <div class="flex flex-col items-center gap-3 text-gray-500">
-              <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+              <div class="w-10 h-10 border-4 border-gray-200 border-t-emerald-500 rounded-full animate-spin"></div>
               <span class="text-sm">Carregando galeria...</span>
             </div>
           </div>

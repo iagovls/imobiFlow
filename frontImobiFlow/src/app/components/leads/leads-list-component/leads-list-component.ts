@@ -16,7 +16,7 @@ type StatusFiltro = LeadStatus | 'todos';
         <button
           type="button"
           class="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
-          [class]="statusFiltro() === 'todos' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+          [class]="statusFiltro() === 'todos' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           (click)="statusFiltro.set('todos')"
         >
           Todos
@@ -25,7 +25,7 @@ type StatusFiltro = LeadStatus | 'todos';
           <button
             type="button"
             class="px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
-            [class]="statusFiltro() === s.value ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            [class]="statusFiltro() === s.value ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
             (click)="statusFiltro.set(s.value)"
           >
             {{ s.label }}
@@ -83,7 +83,7 @@ type StatusFiltro = LeadStatus | 'todos';
             @for (lead of leadsFiltrados(); track lead.id) {
               <tr
                 class="cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-50"
-                [class]="selectedLeadId() === lead.id ? 'bg-blue-50' : ''"
+                [class]="selectedLeadId() === lead.id ? 'bg-emerald-50' : ''"
                 (click)="selectLead(lead)"
               >
                 <td class="pl-5 py-1 border-b border-gray-100 text-sm min-w-[180px]">
@@ -116,7 +116,7 @@ type StatusFiltro = LeadStatus | 'todos';
                 <td class="px-1 py-3. border-b border-gray-100 text-sm w-25 text-center">
                   @if (lead.ticket) {
                     <span
-                      class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 font-semibold text-[0.8125rem]"
+                      class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold text-[0.8125rem]"
                       >{{ formatCurrency(lead.ticket) }}</span
                     >
                   } @else {
@@ -185,7 +185,7 @@ export class LeadsListComponent implements OnInit {
 
   statusClass(status: LeadStatus): string {
     return {
-      novo: 'bg-indigo-50 text-indigo-800',
+      novo: 'bg-emerald-50 text-emerald-800',
       em_atendimento: 'bg-amber-50 text-amber-800',
       qualificado: 'bg-green-50 text-green-800',
       perdido: 'bg-red-50 text-red-800',

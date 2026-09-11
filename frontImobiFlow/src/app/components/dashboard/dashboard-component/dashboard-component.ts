@@ -39,7 +39,7 @@ interface BarDatum {
                     <span class="w-24 shrink-0 text-xs text-gray-600 truncate">{{ d.label }}</span>
                     <div class="flex-1 h-4 rounded-full bg-gray-100 overflow-hidden">
                       <div
-                        class="h-full rounded-full bg-indigo-500 transition-all"
+                        class="h-full rounded-full bg-emerald-500 transition-all"
                         [style.width.%]="(d.value / funilMax()) * 100"
                       ></div>
                     </div>
@@ -61,7 +61,7 @@ interface BarDatum {
                     <span class="w-24 shrink-0 text-xs text-gray-600 truncate">{{ d.label }}</span>
                     <div class="flex-1 h-4 rounded-full bg-gray-100 overflow-hidden">
                       <div
-                        class="h-full rounded-full bg-indigo-500 transition-all"
+                        class="h-full rounded-full bg-emerald-500 transition-all"
                         [style.width.%]="(d.value / bairrosMax()) * 100"
                       ></div>
                     </div>
@@ -79,12 +79,12 @@ interface BarDatum {
             <span class="text-sm text-gray-500">Nenhum imóvel cadastrado.</span>
           } @else {
             <div class="flex h-4 rounded-full overflow-hidden gap-0.5">
-              <div class="bg-indigo-500" [style.width.%]="(finalidade().venda / finalidadeTotal()) * 100"></div>
+              <div class="bg-emerald-500" [style.width.%]="(finalidade().venda / finalidadeTotal()) * 100"></div>
               <div class="bg-amber-500" [style.width.%]="(finalidade().aluguel / finalidadeTotal()) * 100"></div>
             </div>
             <div class="flex items-center gap-4 text-xs text-gray-600">
               <span class="inline-flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 Venda ({{ finalidade().venda }})
               </span>
               <span class="inline-flex items-center gap-1.5">

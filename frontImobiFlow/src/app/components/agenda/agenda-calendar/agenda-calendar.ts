@@ -53,7 +53,7 @@ function diaKey(date: Date): string {
           </div>
           <button
             type="button"
-            class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
             (click)="createNew.emit()"
           >
             + Nova visita
@@ -86,8 +86,8 @@ function diaKey(date: Date): string {
                 type="button"
                 class="aspect-square rounded-lg text-xs flex flex-col items-center justify-center gap-0.5 transition-colors"
                 [class]="
-                  (dia.key === selectedKey() ? 'bg-indigo-600 text-white' : '') +
-                  (dia.key !== selectedKey() && dia.isToday ? ' bg-indigo-50 text-indigo-700 font-semibold' : '') +
+                  (dia.key === selectedKey() ? 'bg-emerald-600 text-white' : '') +
+                  (dia.key !== selectedKey() && dia.isToday ? ' bg-emerald-50 text-emerald-700 font-semibold' : '') +
                   (dia.key !== selectedKey() && !dia.isToday ? (dia.inMonth ? ' text-gray-700 hover:bg-gray-100' : ' text-gray-300 hover:bg-gray-50') : '')
                 "
                 (click)="selectDia(dia)"
@@ -96,7 +96,7 @@ function diaKey(date: Date): string {
                 @if (dia.visitas.length > 0) {
                   <span
                     class="w-1.5 h-1.5 rounded-full"
-                    [class]="dia.key === selectedKey() ? 'bg-white' : 'bg-indigo-500'"
+                    [class]="dia.key === selectedKey() ? 'bg-white' : 'bg-emerald-500'"
                   ></span>
                 }
               </button>
@@ -110,7 +110,7 @@ function diaKey(date: Date): string {
               selectedKey() ? ('Visitas em ' + (selectedDate() | date: 'dd/MM/yyyy')) : 'Próximas visitas'
             }}</span>
             @if (selectedKey()) {
-              <button type="button" class="text-xs text-indigo-600 hover:underline" (click)="clearSelection()">
+              <button type="button" class="text-xs text-emerald-600 hover:underline" (click)="clearSelection()">
                 ver próximas
               </button>
             }
@@ -167,7 +167,7 @@ function diaKey(date: Date): string {
                         Cancelar
                       </button>
                     }
-                    <button type="button" class="text-indigo-600 hover:underline" (click)="edit.emit(v)">
+                    <button type="button" class="text-emerald-600 hover:underline" (click)="edit.emit(v)">
                       Editar
                     </button>
                   </div>
@@ -188,7 +188,7 @@ function diaKey(date: Date): string {
               </p>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                class="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                 (click)="connectGoogle()"
               >
                 Conectar Google Agenda
@@ -208,7 +208,7 @@ function diaKey(date: Date): string {
                 <a
                   [href]="ev.htmlLink ?? '#'"
                   target="_blank"
-                  class="block rounded-lg bg-white border border-gray-200 shadow-sm p-3 hover:border-indigo-300 transition-colors"
+                  class="block rounded-lg bg-white border border-gray-200 shadow-sm p-3 hover:border-emerald-300 transition-colors"
                 >
                   <span class="font-medium text-gray-900 text-sm">{{ ev.summary }}</span>
                   @if (ev.start) {
@@ -382,7 +382,7 @@ export class AgendaCalendarComponent implements OnInit {
 
   statusClass(status: Visita['status']): string {
     return {
-      agendada: 'bg-indigo-50 text-indigo-800',
+      agendada: 'bg-emerald-50 text-emerald-800',
       realizada: 'bg-green-50 text-green-800',
       cancelada: 'bg-red-50 text-red-800',
     }[status];

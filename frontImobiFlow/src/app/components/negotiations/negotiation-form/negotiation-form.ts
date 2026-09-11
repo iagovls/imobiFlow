@@ -85,7 +85,7 @@ import {
         <div class="flex gap-2 mt-2">
           <button
             type="button"
-            class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             [disabled]="saving() || (!negociacao && !leadId)"
             (click)="save()"
           >

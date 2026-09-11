@@ -67,7 +67,7 @@
             <div class="max-w-[75%] px-4 py-3.5 rounded-2xl flex flex-col gap-2 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
                  [ngClass]="{
                    'bg-linear-to-br from-emerald-400 to-emerald-600 text-white rounded-br-sm': isUserMessage(msg.role),
-                   'bg-linear-to-br from-indigo-500 to-indigo-600 text-white rounded-br-sm': isCorretorMessage(msg.role),
+                   'bg-linear-to-br from-emerald-500 to-emerald-600 text-white rounded-br-sm': isCorretorMessage(msg.role),
                    'bg-white border border-gray-200 rounded-bl-sm': isAssistantMessage(msg.role),
                    'bg-gray-100 border border-gray-300 text-gray-700': !isUserMessage(msg.role) && !isAssistantMessage(msg.role) && !isCorretorMessage(msg.role)
                  }">
@@ -114,7 +114,7 @@
       ></textarea>
       <button
         type="button"
-        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 shrink-0"
+        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 shrink-0"
         [disabled]="sending() || !novaMensagem.trim()"
         (click)="enviarMensagem()"
         aria-label="Enviar mensagem"

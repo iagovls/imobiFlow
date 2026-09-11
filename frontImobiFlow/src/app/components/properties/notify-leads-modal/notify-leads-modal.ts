@@ -65,7 +65,7 @@ interface LeadMatch {
           <button type="button" class="text-sm text-gray-600 px-3 py-2" (click)="close.emit()">Fechar</button>
           <button
             type="button"
-            class="text-sm bg-indigo-600 text-white rounded-lg px-4 py-2 disabled:opacity-50"
+            class="text-sm bg-emerald-600 text-white rounded-lg px-4 py-2 disabled:opacity-50"
             [disabled]="enviando() || selecionados().length === 0"
             (click)="enviar()"
           >

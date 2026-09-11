@@ -9,7 +9,7 @@ import { NegotiationsService, Negociacao } from '../../services/negotiations.ser
   standalone: true,
   imports: [FormsModule, LucidePencil],
   template: `
-    <div class="rounded-lg bg-indigo-600 p-4 text-white">
+    <div class="rounded-lg bg-emerald-600 p-4 text-white">
       @if (loading()) {
         <div class="text-sm">Carregando meta...</div>
       } @else if (editando()) {
@@ -36,7 +36,7 @@ import { NegotiationsService, Negociacao } from '../../services/negotiations.ser
           <div class="flex gap-2 mt-1">
             <button
               type="button"
-              class="text-xs font-semibold bg-white text-indigo-700 rounded px-2 py-1 disabled:opacity-50"
+              class="text-xs font-semibold bg-white text-emerald-700 rounded px-2 py-1 disabled:opacity-50"
               [disabled]="salvando()"
               (click)="salvar()"
             >
@@ -50,7 +50,7 @@ import { NegotiationsService, Negociacao } from '../../services/negotiations.ser
       } @else if (!meta()) {
         <div class="flex flex-col gap-2">
           <span class="text-sm font-semibold">Defina sua meta do mês</span>
-          <button type="button" class="text-xs font-semibold bg-white text-indigo-700 rounded px-2 py-1 w-fit" (click)="abrirEdicao()">
+          <button type="button" class="text-xs font-semibold bg-white text-emerald-700 rounded px-2 py-1 w-fit" (click)="abrirEdicao()">
             Definir meta
           </button>
         </div>

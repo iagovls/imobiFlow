@@ -214,7 +214,7 @@
               </select>
               <button
                 type="button"
-                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                class="mt-1 text-xs text-emerald-600 hover:underline disabled:text-gray-400"
                 [disabled]="!form.get('uf_id')?.value"
                 (click)="criandoCidade.set(true)"
               >
@@ -223,7 +223,7 @@
             } @else {
               <div class="flex gap-1">
                 <input #novaCidade type="text" placeholder="Nome da cidade" class="w-full px-3 py-2 text-sm border rounded-lg" />
-                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarCidade(novaCidade.value)">OK</button>
+                <button type="button" class="text-xs bg-emerald-600 text-white rounded-lg px-2" (click)="criarCidade(novaCidade.value)">OK</button>
                 <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoCidade.set(false)">✕</button>
               </div>
             }
@@ -245,7 +245,7 @@
               </select>
               <button
                 type="button"
-                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                class="mt-1 text-xs text-emerald-600 hover:underline disabled:text-gray-400"
                 [disabled]="!form.get('cidade_id')?.value"
                 (click)="criandoRegiao.set(true)"
               >
@@ -254,7 +254,7 @@
             } @else {
               <div class="flex gap-1">
                 <input #novaRegiao type="text" placeholder="Nome da região" class="w-full px-3 py-2 text-sm border rounded-lg" />
-                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarRegiao(novaRegiao.value)">OK</button>
+                <button type="button" class="text-xs bg-emerald-600 text-white rounded-lg px-2" (click)="criarRegiao(novaRegiao.value)">OK</button>
                 <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoRegiao.set(false)">✕</button>
               </div>
             }
@@ -276,7 +276,7 @@
               </select>
               <button
                 type="button"
-                class="mt-1 text-xs text-indigo-600 hover:underline disabled:text-gray-400"
+                class="mt-1 text-xs text-emerald-600 hover:underline disabled:text-gray-400"
                 [disabled]="!form.get('cidade_id')?.value"
                 (click)="criandoBairro.set(true)"
               >
@@ -285,7 +285,7 @@
             } @else {
               <div class="flex gap-1">
                 <input #novoBairro type="text" placeholder="Nome do bairro" class="w-full px-3 py-2 text-sm border rounded-lg" />
-                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarBairro(novoBairro.value)">OK</button>
+                <button type="button" class="text-xs bg-emerald-600 text-white rounded-lg px-2" (click)="criarBairro(novoBairro.value)">OK</button>
                 <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoBairro.set(false)">✕</button>
               </div>
             }
@@ -510,7 +510,7 @@
                   class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs cursor-pointer border"
                   [ngClass]="
                     comodidadesSelecionadas().has(c.id)
-                      ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                       : 'bg-white border-gray-200 text-gray-600'
                   "
                 >
@@ -525,13 +525,13 @@
               }
             </div>
             @if (!criandoComodidade()) {
-              <button type="button" class="mt-1 text-xs text-indigo-600 hover:underline" (click)="criandoComodidade.set(true)">
+              <button type="button" class="mt-1 text-xs text-emerald-600 hover:underline" (click)="criandoComodidade.set(true)">
                 + Nova comodidade
               </button>
             } @else {
               <div class="mt-1 flex gap-1">
                 <input #novaComodidade type="text" placeholder="Nome da comodidade" class="w-full px-3 py-2 text-sm border rounded-lg" />
-                <button type="button" class="text-xs bg-indigo-600 text-white rounded-lg px-2" (click)="criarComodidade(novaComodidade.value)">OK</button>
+                <button type="button" class="text-xs bg-emerald-600 text-white rounded-lg px-2" (click)="criarComodidade(novaComodidade.value)">OK</button>
                 <button type="button" class="text-xs text-gray-500 px-1" (click)="criandoComodidade.set(false)">✕</button>
               </div>
             }
