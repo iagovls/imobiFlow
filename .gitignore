@@ -11,3 +11,4 @@ data.json
 .env
 .env.*
 !.env.example
+connection-n8n-mcp.json
