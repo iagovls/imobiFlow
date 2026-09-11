@@ -39,6 +39,17 @@
         Galeria
       </button>
 
+      @if (!isNew && imovel) {
+        <button
+          type="button"
+          (click)="mostrarNotificarLeads.set(true)"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+          title="Notificar leads com preferência compatível"
+        >
+          Notificar leads
+        </button>
+      }
+
       <button
         type="button"
         (click)="toggleActive()"
@@ -566,4 +577,8 @@
       <div class="h-6"></div>
     </div>
   </form>
+
+  @if (mostrarNotificarLeads() && imovel) {
+    <app-notify-leads-modal [imovel]="imovel" (close)="mostrarNotificarLeads.set(false)" />
+  }
 </div>

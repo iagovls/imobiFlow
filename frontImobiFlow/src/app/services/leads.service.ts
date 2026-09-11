@@ -13,6 +13,16 @@ export const LEAD_STATUSES: { value: LeadStatus; label: string }[] = [
   { value: 'perdido', label: 'Perdido' },
 ];
 
+export interface LeadPreferencias {
+  tipo?: string;
+  finalidade?: 'venda' | 'aluguel';
+  cidade?: string;
+  bairro?: string;
+  preco_min?: number;
+  preco_max?: number;
+  quartos?: number;
+}
+
 export interface Lead {
   id: number;
   nome: string | null;
@@ -25,6 +35,7 @@ export interface Lead {
   status: LeadStatus;
   corretor_id: string | null;
   corretor?: { id: string; display_name: string | null } | null;
+  preferencias: LeadPreferencias;
 }
 
 export interface ConversationMessage {
@@ -94,6 +105,11 @@ export class LeadsService {
     }
 
     return (data as ConversationMessage[]) || [];
+  }
+
+  async getLeadsComPreferencia(): Promise<Lead[]> {
+    const leads = await this.getLeads();
+    return leads.filter((l) => l.preferencias && Object.keys(l.preferencias).length > 0);
   }
 
   async getCorretores(): Promise<Corretor[]> {

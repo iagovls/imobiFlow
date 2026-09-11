@@ -2,6 +2,7 @@ import { Component, Input, OnInit, Output, EventEmitter, signal, OnChanges, Simp
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Imovel, ImovelCreate, ImovelUpdate, PropertiesService, Finalidade } from '../../../services/properties.service';
 import { LocationsService, UF, Cidade, Bairro, Regiao, Comodidade } from '../../../services/locations.service';
+import { NotifyLeadsModalComponent } from '../notify-leads-modal/notify-leads-modal';
 import { NgClass } from '@angular/common';
 import {
   LucideArrowLeft,
@@ -23,7 +24,7 @@ import {
 @Component({
   selector: 'app-property-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgClass, LucideArrowLeft, LucideSave, LucideImage, LucideTag, LucideMapPin, LucideDollarSign, LucideRuler, LucideInfo, LucidePackage, LucideBuilding2, LucideTreeDeciduous, LucideAlertTriangle, LucideToggleLeft, LucideToggleRight],
+  imports: [ReactiveFormsModule, NgClass, NotifyLeadsModalComponent, LucideArrowLeft, LucideSave, LucideImage, LucideTag, LucideMapPin, LucideDollarSign, LucideRuler, LucideInfo, LucidePackage, LucideBuilding2, LucideTreeDeciduous, LucideAlertTriangle, LucideToggleLeft, LucideToggleRight],
   templateUrl: './property-form.html',
   styleUrl: './property-form.css',
 })
@@ -57,6 +58,7 @@ export class PropertyFormComponent implements OnInit, OnChanges {
   criandoBairro = signal(false);
   criandoRegiao = signal(false);
   criandoComodidade = signal(false);
+  mostrarNotificarLeads = signal(false);
 
   constructor(
     private fb: FormBuilder,
