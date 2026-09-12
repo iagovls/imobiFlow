@@ -1,0 +1,40 @@
+@use '@coreui/coreui/scss/carousel';
+
+:host {
+  display: block;
+}
+
+.carousel-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+// CoreUI's Angular carousel drives the slide transition through Angular
+// Animations on c-carousel-inner, which only works when the outgoing item's
+// content is removed in the same tick the animation query runs. Our items
+// are plain divs always present in the DOM, so a crossfade via
+// opacity/visibility is what actually animates both directions symmetrically.
+.carousel-item {
+  display: block !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: none !important;
+  transition:
+    opacity 0.6s ease-in-out,
+    visibility 0s linear 0.6s;
+}
+
+.carousel-item.active {
+  position: relative;
+  height: auto;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.6s ease-in-out;
+  z-index: 1;
+}
